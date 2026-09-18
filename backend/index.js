@@ -1,9 +1,14 @@
 import express from "express";
 import pool from "./db/connection.js";
+import createHotelRouter from './routes/hotelRoutes.js'
+import cors from 'cors'
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
 
 app.get("/health", async (req, res) => {
   try {
@@ -20,6 +25,8 @@ app.get("/health", async (req, res) => {
     });
   }
 });
+
+app.use('/api/hoteles', createHotelRouter());
 
 app.listen(PORT, () => {
   console.log(`CTV Backend running on port ${PORT}`);

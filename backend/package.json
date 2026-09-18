@@ -4,6 +4,7 @@
   "description": "- Node Js - JavaScript - ?",
   "main": "index.js",
   "scripts": {
+    "dev": "node index.js",
     "start": "node index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
