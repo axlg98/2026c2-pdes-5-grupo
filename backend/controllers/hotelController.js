@@ -1,4 +1,4 @@
-import  pool  from '../db/connection.js';
+import { db } from '../db/connection.js';
 import { hoteles } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
@@ -9,9 +9,9 @@ export const obtenerHoteles = async (req, res) => {
     let listaHoteles;
     
     if (destino) {
-      listaHoteles = await pool.select().from(hoteles).where(eq(hoteles.destino, destino));
+      listaHoteles = await db.select().from(hoteles).where(eq(hoteles.destino, destino));
     } else {
-      listaHoteles = await pool.select().from(hoteles);
+      listaHoteles = await db.select().from(hoteles);
     }
     
     res.status(200).json(listaHoteles);
@@ -27,7 +27,7 @@ export const crearHotel = async (req, res) => {
       return res.status(400).json({ error: 'El nombre y el destino son obligatorios.' });
     }
     
-    const [nuevoHotel] = await pool.insert(hoteles).values({
+    const [nuevoHotel] = await db.insert(hoteles).values({
       nombre, destino, foto
     }).returning();
     
