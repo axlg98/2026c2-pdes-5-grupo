@@ -24,6 +24,6 @@ test('el controlador usa la abstracción de base inyectada', async () => {
   const controllerSource = await readSource('controllers/hotelController.js');
 
   assert.match(controllerSource, /createHotelController/);
-  assert.match(controllerSource, /database\.select/);
-  assert.match(controllerSource, /database\.insert/);
+  assert.match(controllerSource, /database\s*\.select/);
+  assert.match(controllerSource, /database\s*\.insert/);
 });
