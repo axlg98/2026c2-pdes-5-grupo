@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/backend.yml'
   push:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/backend.yml'
 
 permissions:
@@ -52,6 +56,10 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
+      - name: Install root test dependencies
+        working-directory: .
+        run: npm ci
+
       - name: Install dependencies
         run: npm ci
 
@@ -63,6 +71,34 @@ jobs:
 
       - name: Run database migrations
         run: npm run db:migrate
+
+      - name: Run Cucumber tests
+        run: npm run test:cucumber
+
+      - name: Start backend for E2E tests
+        run: |
+          npm start > /tmp/ctv-backend.log 2>&1 &
+          echo $! > /tmp/ctv-backend.pid
+          for attempt in {1..20}; do
+            if curl --fail http://localhost:3000/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/ctv-backend.log
+          exit 1
+
+      - name: Run E2E tests
+        env:
+          E2E_BASE_URL: http://localhost:3000
+        run: npm run test:e2e
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f /tmp/ctv-backend.pid ]; then
+            kill $(cat /tmp/ctv-backend.pid) || true
+          fi
 
   publish:
     name: Publish backend image

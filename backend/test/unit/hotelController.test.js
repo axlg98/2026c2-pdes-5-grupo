@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createHotelController } from '../controllers/hotelController.js';
+import { createHotelController } from '../../controllers/hotelController.js';
 
 const createResponse = () => ({
   statusCode: 200,

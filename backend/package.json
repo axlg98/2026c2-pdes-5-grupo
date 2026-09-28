@@ -8,7 +8,9 @@
     "start": "node index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "test": "node --test"
+    "test": "node --test test/unit test/integration test/architecture",
+    "test:cucumber": "npm --prefix .. exec -- cucumber-js backend/test/cucumber/features --import backend/test/cucumber/steps/hotel.steps.js",
+    "test:e2e": "node --test test/e2e"
   },
   "keywords": [],
   "type": "module",
