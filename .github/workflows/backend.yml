@@ -8,7 +8,7 @@ on:
       - 'package-lock.json'
       - '.github/workflows/backend.yml'
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'backend/**'
       - 'package.json'
