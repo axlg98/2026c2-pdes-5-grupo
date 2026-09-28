@@ -43,6 +43,19 @@ services:
         condition: service_healthy
 
   # =========================
+  # CTV FRONTEND
+  # =========================
+
+  ctv-frontend:
+    build:
+      context: ./frontend
+    container_name: ctv-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - ctv-backend
+
+  # =========================
   # FLIGHTS DATABASE
   # =========================
 
