@@ -1,5 +1,13 @@
 import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
 
+export const usuarios = pgTable("usuarios", {
+	 id: serial("id").primaryKey(),
+	 nombre: varchar("nombre", { length: 100 }).notNull(),
+	 email: varchar("email", { length: 255 }).notNull().unique(),
+	 password: text("password").notNull(),
+	 rol: varchar("rol", { length: 50 }).notNull().default("user")
+});
+
 export const hoteles = pgTable("hotel", {
 	id: serial("hotel_id").primaryKey(),
 	nombre: varchar("nombre", { length: 255 }).notNull(),

@@ -1,6 +1,5 @@
 node_modules/
 backend/node_modules/
-drizzle/
 
 .env
 .env.*

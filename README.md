@@ -1,4 +1,4 @@
-# 2026c2-pdes-grupo-nro-
+# 2026c2-pdes-grupo-5-
 
 ---
 
@@ -23,11 +23,12 @@ erDiagram
 
     USUARIO {
         int id_usuario PK
+        string username
         string nombre
         string apellido
         string email
         string password
-        string rol
+        string type_profile
     }
 
     AGENCIA {
@@ -47,7 +48,9 @@ erDiagram
         string nombre
         string descripcion
         decimal precio
+        string origen
         string destino
+        date fecha
     }
 
     HOTEL {
@@ -95,5 +98,5 @@ erDiagram
 ### Integrantes
 
 - Manchali, Damian
-- Qualia, Ezequiel
+- Quaglia, Sebastian
 - García, Axel

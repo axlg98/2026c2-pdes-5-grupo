@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import pool, { db } from "./db/connection.js";
 import createHotelRouter from "./routes/hotelRoutes.js";
@@ -7,6 +8,7 @@ import { swaggerSpec } from "./swagger.js";
 export const createApp = ({ database = db, healthCheck = () => pool.query("SELECT 1") } = {}) => {
   const app = express();
 
+  app.use(cors());
   app.use(express.json());
   app.get("/api-docs.json", (req, res) => res.json(swaggerSpec));
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

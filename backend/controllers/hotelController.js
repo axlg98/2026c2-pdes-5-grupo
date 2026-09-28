@@ -34,3 +34,8 @@ export const createHotelController = (database = db) => ({
     }
   }
 });
+
+const hotelController = createHotelController();
+
+export const obtenerHoteles = hotelController.obtenerHoteles;
+export const crearHotel = hotelController.crearHotel;
