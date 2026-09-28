@@ -6,6 +6,8 @@ const GestionHotel = () =>{
     const [nombre, setNombre] = useState('');
     const [destino, setDestino] = useState('');
     const [foto, setFoto] = useState('');
+    const [mensaje, setMensaje] = useState('');
+    const [error, setError] = useState('');
 
     const cargarHoteles = async() => {
         try{
@@ -16,19 +18,34 @@ const GestionHotel = () =>{
         }
     }
     useEffect(() => {
-        cargarHoteles();
+        let mounted = true;
+
+        obtenerHotelesService()
+            .then((data) => {
+                if (mounted) setHoteles(data);
+            })
+            .catch((error) => {
+                console.error('Error al obtener los hoteles: ', error);
+            });
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     const handleSubmit = async(e) => {
         e.preventDefault();
+        setMensaje('');
+        setError('');
         try{
             await crearHotelService({nombre,destino,foto});
-            // Limpiar formulario y recargar lista
             setNombre('');
             setDestino('');
             setFoto('');
-            cargarHoteles(); 
+            await cargarHoteles();
+            setMensaje('Hotel creado correctamente.');
         } catch (error) {
+            setError(error.message);
             console.error('Error al crear el hotel:', error);
         }
     }
@@ -57,12 +74,15 @@ const GestionHotel = () =>{
                 />
                 <button type="submit">Crear Hotel</button>
             </form>
+
+            {mensaje && <p role="status">{mensaje}</p>}
+            {error && <p role="alert">{error}</p>}
             
             <ul>
                 {
                     hoteles.map((hotel) => (
-                        <li key={hotel.hotel_id}>
-
+                        <li key={hotel.id}>
+                            <strong>{hotel.nombre}</strong> - {hotel.destino}
                         </li>
                     ))
                 }

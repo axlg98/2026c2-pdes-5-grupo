@@ -1,7 +1,8 @@
 import axios from 'axios'
+import { getToken } from './storage'
 
 export const api = axios.create({
-    baseURL: 'http://localhost:300',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/hoteles',
     headers:{
         'Content-Type': 'application/json'
     },
@@ -9,7 +10,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        const token = getToken('authorization');
+        const token = getToken();
         if (token){
             config.headers['authorization'] = token
         }
