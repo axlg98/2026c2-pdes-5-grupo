@@ -2,37 +2,47 @@ import { db } from '../db/connection.js';
 import { hoteles } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
-export const obtenerHoteles = async (req, res) => {
-  try {
-    console.log("Intentando consultar los hoteles en la base de datos...")
-    const { destino } = req.query;
-    let listaHoteles;
-    
-    if (destino) {
-      listaHoteles = await db.select().from(hoteles).where(eq(hoteles.destino, destino));
-    } else {
-      listaHoteles = await db.select().from(hoteles);
-    }
-    
-    res.status(200).json(listaHoteles);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+export const createHotelController = (database = db) => ({
+  obtenerHoteles: async (req, res) => {
+    try {
+      const { destino } = req.query;
+      let listaHoteles;
 
-export const crearHotel = async (req, res) => {
-  try {
-    const { nombre, destino, foto } = req.body;
-    if (!nombre || !destino) {
-      return res.status(400).json({ error: 'El nombre y el destino son obligatorios.' });
+      if (destino) {
+        listaHoteles = await database
+          .select()
+          .from(hoteles)
+          .where(eq(hoteles.destino, destino));
+      } else {
+        listaHoteles = await database.select().from(hoteles);
+      }
+
+      res.status(200).json(listaHoteles);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-    
-    const [nuevoHotel] = await db.insert(hoteles).values({
-      nombre, destino, foto
-    }).returning();
-    
-    res.status(201).json({ mensaje: 'El hotel ha sido creado con éxito.', hotel: nuevoHotel });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  },
+
+  crearHotel: async (req, res) => {
+    try {
+      const { nombre, destino, foto } = req.body;
+      if (!nombre || !destino) {
+        return res.status(400).json({ error: 'El nombre y el destino son obligatorios.' });
+      }
+
+      const [nuevoHotel] = await database
+        .insert(hoteles)
+        .values({ nombre, destino, foto })
+        .returning();
+
+      res.status(201).json({ mensaje: 'El hotel ha sido creado con éxito.', hotel: nuevoHotel });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
-};
+});
+
+const hotelController = createHotelController();
+
+export const obtenerHoteles = hotelController.obtenerHoteles;
+export const crearHotel = hotelController.crearHotel;
