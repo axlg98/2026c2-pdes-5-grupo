@@ -12,6 +12,18 @@ const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
 };
 
 export const createAgenciaController = (database = db) => ({
+  obtenerMisPaquetes: async (req, res) => {
+    try{
+      const agenciaUser = await obtenerAgenciaDeUsuario(database, req.query.idUsuario);
+      if (!agenciaUser){
+        return res.status(403).json({ error: "El usuario no tiene una agencia" });
+      }
+      const paquetes = await database.select().from(paquete).where(eq(paquete.agencia_id, agenciaUser.agencia_id));
+      res.status(200).json({ paquetes });
+    }catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
   altaPaquete: async (req, res) => {
     try {
       const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.body.idUsuario);
@@ -139,6 +151,7 @@ export const createAgenciaController = (database = db) => ({
 
 const agenciaController = createAgenciaController();
 
+export const obtenerPaquetes = agenciaController.obtenerMisPaquetes;
 export const altaPaquete = agenciaController.altaPaquete;
 export const modificarPaquete = agenciaController.modificarPaquete;
 export const bajaPaquete = agenciaController.bajaPaquete;
