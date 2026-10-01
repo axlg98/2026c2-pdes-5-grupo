@@ -76,7 +76,7 @@ const jsonRequest = (method, body) => ({
 });
 
 describe('API de agencia', async() => {
-    test('GET /api/agencia/pauqetes => Devuelve los paquetes de la agencia', async () => {
+    test('GET /api/agencia/paquetes => Devuelve los paquetes de la agencia', async () => {
         const response = await fetch(`${baseUrl}/api/agencia/paquetes?idUsuario=3`);
         const body = await response.json();
 
@@ -89,7 +89,7 @@ describe('API de agencia', async() => {
     test('GET /api/agencia/paquetes responde 403 si el Usuario no tiene Agencia', async () => {
         const appWithoutAgency = createApp({
             database: createDatabase({agencyRecord: null}),
-            healtCheck: async () => {}
+            healthCheck: async () => {}
         });
         const tempraryServer = appWithoutAgency.listen(0);
         await new Promise((resolve) => tempraryServer.once('listening', resolve));
