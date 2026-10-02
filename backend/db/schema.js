@@ -30,7 +30,7 @@ export const paquete = pgTable('paquete', {
     precio: text('precio').notNull(),
     descripcion: text('descripcion').notNull(),
     nombre: varchar('nombre', {length:100}),
-    origen: varchar('origen', {length:100}).notNull(),
+    origen: varchar('destino', {length:100}).notNull(),
     destino: varchar('destino', {length:100}).notNull(),
 })
 
