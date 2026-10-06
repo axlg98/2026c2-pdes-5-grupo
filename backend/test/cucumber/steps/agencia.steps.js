@@ -2,16 +2,17 @@ import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert';
 import request from 'supertest';
 import { createApp } from '../../../app.js';
+import {agencia, paquete} from '../../../db/schema.js'
 
 const createDatabase = () => ({
   select() {
     return {
-      from() {
-        const query = Promise.resolve([
-          { id: 1, nombre: 'Paquete Cucumber', destino: 'Buenos Aires' }
-        ]);
-        query.where = () => Promise.resolve([]);
-        return query;
+      from(table) {
+        return {
+          where: async () => table === agencia
+            ? [{ agencia_id: 1, user_id: 1 }]
+            : [{ paquete_id: 1, agencia_id: 1, nombre: 'Paquete Cucumber', destino: 'Buenos Aires' }]
+        };
       }
     };
   },
@@ -39,7 +40,7 @@ Given('Que la API de agencias está disponible', async function () {
 });
 
 When('Consulto los paquetes', async function () {
-  this.response = await request(app).get('/api/agencia/paquetes');
+  this.response = await request(app).get('/api/agencia/paquetes?idUsuario=1');
 });
 
 When('Creo un paquete llamado {string} con destino {string}', async function (nombre, destino) {
@@ -57,7 +58,7 @@ When('Creo un paquete llamado {string} con destino {string}', async function (no
 
 
 Then('la respuesta contiene el paquete {string}', function (nombre) {
-  const nombres = this.response.body.map(p => p.nombre);
+  const nombres = this.response.body.paquetes.map(p => p.nombre);
   assert.ok(nombres.includes(nombre), `No se encontró "${nombre}" entre: ${JSON.stringify(nombres)}`);
 });
 
