@@ -5,7 +5,7 @@ import {handleError} from './handleError'
 //GET
 export const obtenerHotelesService = async() => {
     try{
-        const res = await api.get('/');
+        const res = await api.get('/hoteles');
         return res.data;
     }catch(error){
         return Promise.reject(handleError(error));
@@ -15,7 +15,7 @@ export const obtenerHotelesService = async() => {
 //POST
 export const crearHotelService = async(hotelData) => {
     try{
-        const res = await api.post('/', hotelData);
+        const res = await api.post('/hoteles', hotelData);
         return res.data;
     }catch(error){
         return Promise.reject(handleError(error));
