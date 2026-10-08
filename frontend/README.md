@@ -16,12 +16,12 @@
 ### Opción 1: de manera local:
 * Primero se necesita tener instalado/actualizado el npm 
   
-    ```bash
+    ```
         npm install
     ```
 
 * Luego levantar el proyecto:
   
-    ```bash
+    ```
         npm run dev
     ```
