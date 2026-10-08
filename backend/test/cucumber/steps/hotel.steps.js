@@ -54,9 +54,6 @@ When('creo un hotel llamado {string} en {string}', async function (nombre, desti
   this.responseBody = await this.response.json();
 });
 
-Then('la respuesta tiene estado {int}', function (status) {
-  assert.equal(this.response.status, status);
-});
 
 Then('la respuesta contiene el hotel {string}', function (nombre) {
   assert.ok(this.responseBody.some((hotel) => hotel.nombre === nombre));

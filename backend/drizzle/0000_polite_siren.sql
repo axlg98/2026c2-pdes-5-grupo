@@ -13,3 +13,4 @@ CREATE TABLE "usuarios" (
 	"rol" varchar(50) DEFAULT 'user' NOT NULL,
 	CONSTRAINT "usuarios_email_unique" UNIQUE("email")
 );
+
