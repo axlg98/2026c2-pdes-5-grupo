@@ -11,3 +11,16 @@
 
 ## Ejecución
 
+### Para levantar el proyecto
+
+### Opción 1: de manera local:
+* Primero se necesita tener instalado/actualizado el npm 
+    ```
+        npm install
+    ```
+
+* Luego levantar el proyecto:
+    ```
+        npm run dev
+    ```
+    
