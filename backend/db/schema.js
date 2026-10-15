@@ -5,7 +5,7 @@ export const usuarios = pgTable('usuarios', {
     nombre: varchar('nombre', {length:100}).notNull(),
     email: varchar('email', {length:255}).notNull().unique(),
     password: text('password').notNull(),
-    rol: varchar('rol', {length:50}).notNull().default('user'), // user?
+    rol: varchar('rol', {length:50}).notNull().default('comprador'),
 });
 
 export const hoteles = pgTable('hotel',{

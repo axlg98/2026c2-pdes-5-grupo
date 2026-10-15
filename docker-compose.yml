@@ -32,6 +32,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-secret-dev}
       PORT: 3000
       DB_HOST: ctv-postgres
       DB_PORT: 5432
