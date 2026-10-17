@@ -45,7 +45,6 @@ jobs:
       DB_NAME: ctv
       DB_USER: ctv
       DB_PASSWORD: ctv
-      #JWT_SECRET: secreto-de-test-ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
