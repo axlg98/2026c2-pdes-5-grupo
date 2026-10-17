@@ -23,7 +23,7 @@ export const createApp = ({ database = db, healthCheck = () => pool.query('SELEC
     }
   });
 
-  app.use('/api/hoteles', auth, createHotelRouter(database));
+  app.use('/api/hoteles', createHotelRouter(database));
   app.use('/api/agencia',auth, requireRol('agencia'), createAgenciaRouter(database));
   app.use('/api/auth', createAuthRouter(database))
 

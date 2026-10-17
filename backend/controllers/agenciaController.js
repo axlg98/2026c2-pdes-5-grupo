@@ -118,7 +118,7 @@ export const createAgenciaController = (database = db) => ({
 
   bajaPaquete: async (req, res) => {
     try {
-      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.body.idUsuario);
+      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.user.id);
       if (!agenciaUsuario) {
         return res.status(403).json({ error: "El usuario no tiene una agencia asociada." });
       }
