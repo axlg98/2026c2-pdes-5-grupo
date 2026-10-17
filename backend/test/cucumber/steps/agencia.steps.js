@@ -1,8 +1,11 @@
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { createApp } from '../../../app.js';
-import {agencia, paquete} from '../../../db/schema.js'
+import { agencia } from '../../../db/schema.js';
+
+process.env.JWT_SECRET ||= 'secreto-de-test';
 
 const createDatabase = () => ({
   select() {
@@ -32,6 +35,7 @@ let app;
 Before(function () {
   app = createApp({ database: createDatabase(), healthCheck: async () => {} });
   this.response = null;
+  this.token = jwt.sign({ id: 1, rol: 'agencia' }, process.env.JWT_SECRET);
 });
 
 Given('Que la API de agencias está disponible', async function () {
@@ -40,22 +44,23 @@ Given('Que la API de agencias está disponible', async function () {
 });
 
 When('Consulto los paquetes', async function () {
-  this.response = await request(app).get('/api/agencia/paquetes?idUsuario=1');
+  this.response = await request(app)
+    .get('/api/agencia/paquetes')
+    .set('Authorization', `Bearer ${this.token}`);
 });
 
 When('Creo un paquete llamado {string} con destino {string}', async function (nombre, destino) {
   this.response = await request(app)
     .post('/api/agencia/paquetes')
+    .set('Authorization', `Bearer ${this.token}`)
     .send({
       nombre, destino,
       origen: 'Buenos Aires',
       descripcion: 'Paquete de prueba',
       precio: 10500,
-      hotel_id: 1,
-      idUsuario: 1
+      hotel_id: 1
     });
 });
-
 
 Then('la respuesta contiene el paquete {string}', function (nombre) {
   const nombres = this.response.body.paquetes.map(p => p.nombre);
