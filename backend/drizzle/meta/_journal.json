@@ -15,6 +15,13 @@
       "when": 1791304018405,
       "tag": "0001_burly_secret_warriors",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791863900792,
+      "tag": "0002_typical_triathlon",
+      "breakpoints": true
     }
   ]
 }

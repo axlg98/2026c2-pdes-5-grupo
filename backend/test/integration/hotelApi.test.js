@@ -1,6 +1,13 @@
+import jwt from 'jsonwebtoken';
 import assert from 'node:assert/strict';
-import test, { after, before } from 'node:test';
+import test, { after, before, describe } from 'node:test';
 import { createApp } from '../../app.js';
+
+process.env.JWT_SECRET ||= 'secreto-de-test';
+
+const firmar = (payload) => jwt.sign(payload, process.env.JWT_SECRET);
+const tokenAdmin = firmar({ id: 3, rol: 'admin' });
+const tokenAgencia = firmar({ id: 5, rol: 'agencia' });
 
 const createDatabase = () => ({
   select() {
@@ -33,32 +40,66 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 });
 
-after(() => server.close());
-
-test('GET /health responde correctamente', async () => {
-  const response = await fetch(`${baseUrl}/health`);
-  const body = await response.json();
-
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { status: 'ok' });
+after(async () => {
+  if (server) {
+    await new Promise((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
 });
 
-test('GET /api/hoteles devuelve hoteles', async () => {
-  const response = await fetch(`${baseUrl}/api/hoteles`);
-  const body = await response.json();
-
-  assert.equal(response.status, 200);
-  assert.equal(body[0].nombre, 'Hotel Central');
+const request = (method, token, body) => ({
+  method,
+  headers: {
+    ...(body && { 'Content-Type': 'application/json' }),
+    ...(token && { Authorization: `Bearer ${token}` })
+  },
+  ...(body && { body: JSON.stringify(body) })
 });
 
-test('POST /api/hoteles crea un hotel', async () => {
-  const response = await fetch(`${baseUrl}/api/hoteles`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre: 'Hotel Nuevo', destino: 'Cordoba' })
+describe('API de Hotel.', () => {
+  test('GET /health responde correctamente', async () => {
+    const response = await fetch(`${baseUrl}/health`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, { status: 'ok' });
   });
-  const body = await response.json();
 
-  assert.equal(response.status, 201);
-  assert.equal(body.hotel.nombre, 'Hotel Nuevo');
+  test('GET /api/hoteles devuelve hoteles', async () => {
+    const response = await fetch(`${baseUrl}/api/hoteles`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body[0].nombre, 'Hotel Central');
+  });
+
+  test('POST /api/hoteles crea un hotel', async () => {
+    const response = await fetch(
+      `${baseUrl}/api/hoteles`,
+      request('POST', tokenAdmin, { nombre: 'Hotel Nuevo', destino: 'Cordoba' })
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.hotel.nombre, 'Hotel Nuevo');
+  });
+
+  test('POST /api/hoteles responde 401 sin token', async () => {
+    const response = await fetch(
+      `${baseUrl}/api/hoteles`,
+      request('POST', null, { nombre: 'Hotel Nuevo', destino: 'Cordoba' })
+    );
+
+    assert.equal(response.status, 401);
+  });
+
+  test('POST /api/hoteles responde 403 si el rol no es admin', async () => {
+    const response = await fetch(
+      `${baseUrl}/api/hoteles`,
+      request('POST', tokenAgencia, { nombre: 'Hotel Nuevo', destino: 'Cordoba' })
+    );
+
+    assert.equal(response.status, 403);
+  });
 });
