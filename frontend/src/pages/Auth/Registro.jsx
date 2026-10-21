@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { registerService } from '../../services/authService';
 import './Registro.css';
 
@@ -141,6 +142,10 @@ function Registro() {
             <span aria-hidden="true">-&gt;</span>
           </button>
         </form>
+
+        <p className="auth-switch">
+          ¿Ya tenés cuenta? <Link to="/login">Iniciar sesión</Link>
+        </p>
       </section>
     </main>
   );

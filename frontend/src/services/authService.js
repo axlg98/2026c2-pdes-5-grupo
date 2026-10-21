@@ -9,3 +9,12 @@ export const registerService = async (userData) => {
     return Promise.reject(handleError(error, 'No se pudo completar el registro.'));
   }
 };
+
+export const loginService = async (credentials) => {
+  try {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(handleError(error, 'No se pudo iniciar sesión.'));
+  }
+};

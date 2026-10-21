@@ -33,6 +33,9 @@ services:
       - "3000:3000"
     environment:
       JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ctv.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
       PORT: 3000
       DB_HOST: ctv-postgres
       DB_PORT: 5432
