@@ -8,15 +8,15 @@ services:
     image: postgres:18-alpine
     container_name: ctv-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ctv}
+      POSTGRES_USER: ${POSTGRES_USER:-ctv_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ctv_password}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ctv_postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ctv_user} -d ${POSTGRES_DB:-ctv}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -32,13 +32,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret}
       PORT: 3000
       DB_HOST: ctv-postgres
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB:-ctv}
+      DB_USER: ${POSTGRES_USER:-ctv_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ctv_password}
     depends_on:
       ctv-postgres:
         condition: service_healthy
@@ -64,18 +64,18 @@ services:
     image: postgres:18-alpine
     container_name: flights-postgres
     environment:
-      POSTGRES_DB: ${FLIGHTS_POSTGRES_DB}
-      POSTGRES_USER: ${FLIGHTS_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${FLIGHTS_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${FLIGHTS_POSTGRES_DB:-flights}
+      POSTGRES_USER: ${FLIGHTS_POSTGRES_USER:-flights_user}
+      POSTGRES_PASSWORD: ${FLIGHTS_POSTGRES_PASSWORD:-flights_password}
     ports:
-      - "${FLIGHTS_POSTGRES_PORT}:5432"
+      - "${FLIGHTS_POSTGRES_PORT:-5433}:5432"
     volumes:
       - flights_postgres_data:/var/lib/postgresql
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${FLIGHTS_POSTGRES_USER} -d ${FLIGHTS_POSTGRES_DB}"
+          "pg_isready -U ${FLIGHTS_POSTGRES_USER:-flights_user} -d ${FLIGHTS_POSTGRES_DB:-flights}"
         ]
       interval: 5s
       timeout: 5s
@@ -95,9 +95,9 @@ services:
       PORT: 3001
       DB_HOST: flights-postgres
       DB_PORT: 5432
-      DB_NAME: ${FLIGHTS_POSTGRES_DB}
-      DB_USER: ${FLIGHTS_POSTGRES_USER}
-      DB_PASSWORD: ${FLIGHTS_POSTGRES_PASSWORD}
+      DB_NAME: ${FLIGHTS_POSTGRES_DB:-flights}
+      DB_USER: ${FLIGHTS_POSTGRES_USER:-flights_user}
+      DB_PASSWORD: ${FLIGHTS_POSTGRES_PASSWORD:-flights_password}
     depends_on:
       flights-postgres:
         condition: service_healthy
