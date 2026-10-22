@@ -6,6 +6,7 @@ import createAgenciaRouter from './routes/agenciaRoutes.js';
 import createAuthRouter from './routes/authRoutes.js';
 import {auth} from './middlewares/auth.js'
 import { requireRol } from './middlewares/requireRol.js'
+import { ROLES } from './constants/roles.js';
 
 export const createApp = ({ database = db, healthCheck = () => pool.query('SELECT 1') } = {}) => {
   const app = express();
@@ -24,7 +25,7 @@ export const createApp = ({ database = db, healthCheck = () => pool.query('SELEC
   });
 
   app.use('/api/hoteles', createHotelRouter(database));
-  app.use('/api/agencia',auth, requireRol('agencia'), createAgenciaRouter(database));
+  app.use('/api/agencia',auth, requireRol(ROLES.AGENCIA), createAgenciaRouter(database));
   app.use('/api/auth', createAuthRouter(database))
 
 
