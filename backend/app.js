@@ -4,6 +4,7 @@ import pool, { db } from './db/connection.js';
 import createHotelRouter from './routes/hotelRoutes.js';
 import createAgenciaRouter from './routes/agenciaRoutes.js';
 import createAuthRouter from './routes/authRoutes.js';
+import createFavoritoRouter from './routes/favoritoRoutes.js';
 import {auth} from './middlewares/auth.js'
 import { requireRol } from './middlewares/requireRol.js'
 import { ROLES } from './constants/roles.js';
@@ -25,9 +26,9 @@ export const createApp = ({ database = db, healthCheck = () => pool.query('SELEC
   });
 
   app.use('/api/hoteles', createHotelRouter(database));
-  app.use('/api/agencia',auth, requireRol(ROLES.AGENCIA), createAgenciaRouter(database));
-  app.use('/api/auth', createAuthRouter(database))
-
+  app.use('/api/agencia',auth, requireRol(ROLES.ADMIN), createAgenciaRouter(database));
+  app.use('/api/auth', createAuthRouter(database));
+  app.use('/api/favoritos',auth, requireRol(ROLES.COMPRADOR), createFavoritoRouter(database))
 
   return app;
 };

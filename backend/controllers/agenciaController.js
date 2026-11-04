@@ -14,7 +14,7 @@ const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
 export const createAgenciaController = (database = db) => ({
   obtenerMisPaquetes: async (req, res) => {
     try{
-      const agenciaUser = await obtenerAgenciaDeUsuario(database, req.query.idUsuario);
+      const agenciaUser = await obtenerAgenciaDeUsuario(database, req.user.id);
       if (!agenciaUser){
         return res.status(403).json({ error: "El usuario no tiene una agencia" });
       }
@@ -26,7 +26,7 @@ export const createAgenciaController = (database = db) => ({
   },
   altaPaquete: async (req, res) => {
     try {
-      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.body.idUsuario);
+      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.user.id);
       if (!agenciaUsuario) {
         return res.status(403).json({ error: "El usuario no tiene una agencia" });
       }
@@ -64,7 +64,7 @@ export const createAgenciaController = (database = db) => ({
 
   modificarPaquete: async (req, res) => {
     try {
-      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.body.idUsuario);
+      const agenciaUsuario = await obtenerAgenciaDeUsuario(database, req.user.id);
       if (!agenciaUsuario) {
         return res.status(403).json({ error: "El usuario no tiene una agencia" });
       }

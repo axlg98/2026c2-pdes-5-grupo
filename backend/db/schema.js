@@ -1,3 +1,4 @@
+import { integer } from "drizzle-orm/gel-core";
 import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable('usuarios', {
@@ -33,3 +34,14 @@ export const paquete = pgTable('paquete', {
     origen: varchar('origen', {length:100}).notNull(),
     destino: varchar('destino', {length:100}).notNull(),
 })
+
+export const favorito = pgTable('favoritos', {
+    favorito_id: serial('favorito_id').primaryKey(),
+    user_id: serial('user_id').notNull().unique().references(() => usuarios.id),
+    paquete_id: serial('paquete_id').notNull().unique().references(() => paquete.paquete_id),
+    puntaje: integer('puntaje'),
+    comentario: varchar('comentario',{length:255}),
+}, (t) => ({
+    unicoPorUsuario: unique().on(t.user_id, t.paquete_id),
+    puntajeEnRango: check('puntaje_0_a_10', `sql ${t.puntaje} BETWEEN 0 AND 10`)
+}))
