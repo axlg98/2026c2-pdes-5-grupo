@@ -7,7 +7,7 @@ import { agencia } from '../../db/schema.js';
 process.env.JWT_SECRET ||= 'secreto-de-test';
 
 const firmar = (payload) => jwt.sign(payload, process.env.JWT_SECRET);
-const tokenAgencia = firmar({ id: 3, rol: 'agencia' });
+const tokenAdmin = firmar({ id: 3, rol: 'admin' });
 const tokenComprador = firmar({ id: 5, rol: 'comprador' });
 
 const createDatabase = ({
@@ -25,11 +25,13 @@ const createDatabase = ({
       }
     };
   },
-  insert() {
+  insert(table) {
     return {
       values(values) {
         return {
-          returning: async () => [{ paquete_id: 8, ...values }]
+          returning: async () => [table === agencia
+            ? { agencia_id: 8, ...values }
+            : { paquete_id: 8, ...values }]
         };
       }
     };
@@ -97,14 +99,42 @@ describe('API de agencia', () => {
       assert.equal(response.status, 401);
     });
 
-    test('responde 403 si el rol no es agencia', async () => {
+    test('responde 403 si el rol no es admin', async () => {
       const response = await fetch(`${baseUrl}/api/agencia/paquetes`, request('GET', tokenComprador));
       assert.equal(response.status, 403);
     });
   });
 
+  test('POST /api/agencia crea una agencia vinculada al admin autenticado', async () => {
+    const datosAgencia = {
+      nombre: 'Agencia de prueba',
+      email: 'agencia@example.com',
+      telefono: '123456789'
+    };
+    const response = await fetch(
+      `${baseUrl}/api/agencia`,
+      request('POST', tokenAdmin, datosAgencia)
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.agencia.user_id, 3);
+    assert.equal(body.agencia.nombre, datosAgencia.nombre);
+  });
+
+  test('POST /api/agencia responde 400 si faltan nombre o email', async () => {
+    const response = await fetch(
+      `${baseUrl}/api/agencia`,
+      request('POST', tokenAdmin, { nombre: 'Agencia incompleta' })
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, { error: 'El nombre y el email son obligatorios' });
+  });
+
   test('GET /api/agencia/paquetes => Devuelve los paquetes de la agencia', async () => {
-    const response = await fetch(`${baseUrl}/api/agencia/paquetes`, request('GET', tokenAgencia));
+    const response = await fetch(`${baseUrl}/api/agencia/paquetes`, request('GET', tokenAdmin));
     const body = await response.json();
 
     assert.equal(response.status, 200);
@@ -122,7 +152,7 @@ describe('API de agencia', () => {
     await new Promise((resolve) => temporaryServer.once('listening', resolve));
     const urlTemporary = `http://127.0.0.1:${temporaryServer.address().port}`;
     try {
-      const response = await fetch(`${urlTemporary}/api/agencia/paquetes`, request('GET', tokenAgencia));
+      const response = await fetch(`${urlTemporary}/api/agencia/paquetes`, request('GET', tokenAdmin));
       const body = await response.json();
       assert.equal(response.status, 403);
       assert.deepEqual(body, { error: 'El usuario no tiene una agencia' });
@@ -143,7 +173,7 @@ describe('API de agencia', () => {
     };
     const response = await fetch(
       `${baseUrl}/api/agencia/paquetes`,
-      request('POST', tokenAgencia, paquete)
+      request('POST', tokenAdmin, paquete)
     );
     const body = await response.json();
 
@@ -155,7 +185,7 @@ describe('API de agencia', () => {
   test('POST /api/agencia/paquetes => Responde 400 si faltan datos obligatorios', async () => {
     const response = await fetch(
       `${baseUrl}/api/agencia/paquetes`,
-      request('POST', tokenAgencia, { nombre: 'Paquete Incompleto' })
+      request('POST', tokenAdmin, { nombre: 'Paquete Incompleto' })
     );
     const body = await response.json();
 
@@ -173,7 +203,7 @@ describe('API de agencia', () => {
     };
     const resp = await fetch(
       `${baseUrl}/api/agencia/paquetes/4`,
-      request('PUT', tokenAgencia, cambios)
+      request('PUT', tokenAdmin, cambios)
     );
     const body = await resp.json();
 
@@ -185,7 +215,7 @@ describe('API de agencia', () => {
   test('DELETE /api/agencia/paquetes/:paquete_id => Elimina un paquete', async () => {
     const resp = await fetch(
       `${baseUrl}/api/agencia/paquetes/4`,
-      request('DELETE', tokenAgencia)
+      request('DELETE', tokenAdmin)
     );
     const body = await resp.json();
 

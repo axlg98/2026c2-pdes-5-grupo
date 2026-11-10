@@ -18,7 +18,7 @@ export const hoteles = pgTable('hotel',{
 
 export const agencia = pgTable('agencia', {
     agencia_id: serial('agencia_id').primaryKey(),
-    user_id: serial('user_id').notNull().unique().references(() => usuarios.id),
+    user_id: integer('user_id').notNull().unique().references(() => usuarios.id),
     nombre:varchar('nombre',{length:100}).notNull(),
     email: varchar('email', {length:255}).notNull().unique(),
     telefono: text('telefono')
@@ -26,8 +26,8 @@ export const agencia = pgTable('agencia', {
 
 export const paquete = pgTable('paquete', {
     paquete_id: serial('paquete_id').primaryKey(),
-    agencia_id: serial('agencia_id').notNull().references(() => agencia.agencia_id),
-    hotel_id: serial('hotel_id').notNull().references(() => hoteles.id),
+    agencia_id: integer('agencia_id').notNull().references(() => agencia.agencia_id),
+    hotel_id: integer('hotel_id').notNull().references(() => hoteles.id),
     precio: text('precio').notNull(),
     descripcion: text('descripcion').notNull(),
     nombre: varchar('nombre', {length:100}),

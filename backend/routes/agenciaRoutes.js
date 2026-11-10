@@ -4,8 +4,9 @@ import { db } from '../db/connection.js';
 
 const createAgenciaRouter = (database = db) => {
   const router = Router();
-  const { altaPaquete, modificarPaquete, bajaPaquete, obtenerMisPaquetes } = createAgenciaController(database);
+  const { altaAgencia, altaPaquete, modificarPaquete, bajaPaquete, obtenerMisPaquetes } = createAgenciaController(database);
 
+  router.post('/', altaAgencia);
   router.post('/paquetes', altaPaquete);
   router.get('/paquetes', obtenerMisPaquetes);
   router.put('/paquetes/:paquete_id', modificarPaquete);

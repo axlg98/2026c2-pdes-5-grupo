@@ -12,6 +12,38 @@ const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
 };
 
 export const createAgenciaController = (database = db) => ({
+  altaAgencia: async (req, res) => {
+    try {
+      const { nombre, email, telefono } = req.body ?? {};
+
+      if (typeof nombre !== 'string' || !nombre.trim() ||
+          typeof email !== 'string' || !email.trim()) {
+        return res.status(400).json({ error: 'El nombre y el email son obligatorios' });
+      }
+
+      const [nuevaAgencia] = await database
+        .insert(agencia)
+        .values({
+          user_id: req.user.id,
+          nombre: nombre.trim(),
+          email: email.trim(),
+          telefono: typeof telefono === 'string' && telefono.trim() ? telefono.trim() : null
+        })
+        .returning();
+
+      return res.status(201).json({
+        mensaje: 'La agencia se creó con éxito',
+        agencia: nuevaAgencia
+      });
+    } catch (error) {
+      if (error.code === '23505' || error.cause?.code === '23505') {
+        return res.status(409).json({
+          error: 'El usuario ya tiene una agencia o el email ya está registrado'
+        });
+      }
+      return res.status(500).json({ error: error.message });
+    }
+  },
   obtenerMisPaquetes: async (req, res) => {
     try{
       const agenciaUser = await obtenerAgenciaDeUsuario(database, req.user.id);
@@ -151,6 +183,7 @@ export const createAgenciaController = (database = db) => ({
 
 const agenciaController = createAgenciaController();
 
+export const altaAgencia = agenciaController.altaAgencia;
 export const obtenerPaquetes = agenciaController.obtenerMisPaquetes;
 export const altaPaquete = agenciaController.altaPaquete;
 export const modificarPaquete = agenciaController.modificarPaquete;
