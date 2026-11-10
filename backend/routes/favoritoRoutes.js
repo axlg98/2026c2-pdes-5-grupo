@@ -9,7 +9,7 @@ const createFavoritoRouter = (database = db) => {
     router.post('/',guardarFavorito);
     router.get('/',obtenerMisFavoritos);
     router.put('/:favorito_id',modificarFavoritos);
-    router.delete('/favorito_id',quitarFavorito);
+    router.delete('/:favorito_id',quitarFavorito);
 
     return router;
 }

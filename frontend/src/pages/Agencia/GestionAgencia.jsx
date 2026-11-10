@@ -17,7 +17,7 @@ const paqueteVacio = {
   hotel_id: ''
 };
 
-export function GestionAgencia() {
+function GestionAgencia() {
   const [paquetes, setPaquetes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
