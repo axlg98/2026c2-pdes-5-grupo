@@ -11,7 +11,7 @@ export const createFavoritoController = (database = db) => {
                 return res.status(400).json({error: "el paquete_id es obligatorio."});
             }
 
-            const [nuevo] = await database.insert(favorito).values({user_id: req.user_id, paquete_id: paqueteId}).returning();
+            const [nuevo] = await database.insert(favorito).values({user_id: req.user.id, paquete_id: paqueteId}).returning();
 
             res.status(201).json({mensaje: 'Paquete guardado en favoritos.',favorito:nuevo})
 
@@ -43,7 +43,7 @@ export const createFavoritoController = (database = db) => {
             
               res.status(200).json({favoritos});
         }catch(err){
-            res.status(500).json({error: err.messae});
+            res.status(500).json({error: err.message});
         }
     }
 
