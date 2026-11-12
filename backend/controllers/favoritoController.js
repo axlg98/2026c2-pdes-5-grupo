@@ -3,6 +3,22 @@ import { favorito, paquete } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 
 export const createFavoritoController = (database = db) => {
+    const obtenerPaquetes = async (req, res) => {
+        try {
+            const paquetes = await database.select({
+                paquete_id: paquete.paquete_id,
+                nombre: paquete.nombre,
+                origen: paquete.origen,
+                destino: paquete.destino,
+                precio: paquete.precio
+            }).from(paquete);
+
+            res.status(200).json({ paquetes });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    };
+
     const guardarFavorito = async(req,res) => {
         try{
             const paqueteId = Number(req.body.paquete_id);
@@ -16,14 +32,16 @@ export const createFavoritoController = (database = db) => {
             res.status(201).json({mensaje: 'Paquete guardado en favoritos.',favorito:nuevo})
 
         }catch(err){
-            if (err.code?? err.cause?.code === '23505'){
+            const codigo = err.code ?? err.cause?.code;
+            if (codigo === '23505'){
                 return res.status(409).json({error: 'El paquete ya esa en tus favoritos.'})
             }
 
-            if(err.code?? err.cause?.code === '23505'){
+            if (codigo === '23503') {
                 return res.status(404).json({error:'El paquete no existe.'})
             }
-            res.status(500).json({error:err.message});
+            console.error('Error al guardar el favorito:', err);
+            res.status(500).json({error:'No se pudo guardar el favorito.'});
         }
     };
 
@@ -56,13 +74,13 @@ export const createFavoritoController = (database = db) => {
                 return res.status(400).json({error: 'Envie un puntaje o un comentario.'});
             }
 
-            if(!puntaje >= 0 && !puntaje <= 10){
-                return res.status(400).json({error: 'El puntaje no está dentro del rango permitido, debe ser de 0 a 10.'})
+            if(puntaje !== undefined && (!Number.isFinite(Number(puntaje)) || Number(puntaje) < 0 || Number(puntaje) > 10)){
+                return res.status(400).json({error: 'El puntaje no está dentro del rango permitido, debe ser de 0 a 10.'});
             }
 
-            const cambios = {
-                ...({puntaje: Number(puntaje),comentario:comentario})
-            }
+            const cambios = {};
+            if (puntaje !== undefined) cambios.puntaje = Number(puntaje);
+            if (comentario !== undefined) cambios.comentario = comentario;
 
             const [actualizado] = await database.update(favorito).set(cambios)
                                                 .where(and(eq(favorito.favorito_id, favoritoId), 
@@ -100,6 +118,5 @@ export const createFavoritoController = (database = db) => {
             res.status(500).json({error: err.message});
         }
     };
-    return {guardarFavorito, obtenerMisFavoritos, modificarFavoritos, quitarFavorito};
+    return {guardarFavorito, obtenerPaquetes, obtenerMisFavoritos, modificarFavoritos, quitarFavorito};
 }
-

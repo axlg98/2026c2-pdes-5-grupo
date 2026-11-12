@@ -4,9 +4,10 @@ import {createFavoritoController} from '../controllers/favoritoController.js';
 
 const createFavoritoRouter = (database = db) => {
     const router = Router();
-    const {guardarFavorito,modificarFavoritos,obtenerMisFavoritos,quitarFavorito} = createFavoritoController(database);
+    const {guardarFavorito,obtenerPaquetes,modificarFavoritos,obtenerMisFavoritos,quitarFavorito} = createFavoritoController(database);
 
     router.post('/',guardarFavorito);
+    router.get('/paquetes', obtenerPaquetes);
     router.get('/',obtenerMisFavoritos);
     router.put('/:favorito_id',modificarFavoritos);
     router.delete('/:favorito_id',quitarFavorito);
