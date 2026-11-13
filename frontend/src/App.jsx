@@ -4,6 +4,7 @@ import GestionHotel from './pages/Hotel/GestionHotel'
 import GestionAgencia from './pages/Agencia/GestionAgencia'
 import Registro from './pages/Auth/Registro'
 import Login from './pages/Auth/Login'
+import GestionFavoritos from './pages/Favoritos/GestionFavoritos'
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
         <Route path='/login' element={<Login />} />
         <Route path='/hotel' element={<GestionHotel/>} />
         <Route path='/agencia' element={<GestionAgencia/>} />
+        <Route path='/favoritos' element={<GestionFavoritos/>}/>
       </Routes>
     </BrowserRouter>
 
