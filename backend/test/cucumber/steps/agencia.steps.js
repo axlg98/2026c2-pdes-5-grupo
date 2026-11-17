@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { createApp } from '../../../app.js';
-import { agencia } from '../../../db/schema.js';
+import { agencia, hoteles } from '../../../db/schema.js';
 
 process.env.JWT_SECRET ||= 'secreto-de-test';
 
@@ -14,6 +14,8 @@ const createDatabase = () => ({
         return {
           where: async () => table === agencia
             ? [{ agencia_id: 1, user_id: 1 }]
+            : table === hoteles
+              ? [{ id: 1, nombre: 'Hotel Cucumber', destino: 'Bariloche' }]
             : [{ paquete_id: 1, agencia_id: 1, nombre: 'Paquete Cucumber', destino: 'Buenos Aires' }]
         };
       }
@@ -31,9 +33,28 @@ const createDatabase = () => ({
 });
 
 let app;
+const flightApiClient = {
+  getFlight: async (id) => id === 10 ? {
+    id: 10,
+    origen: 'Buenos Aires',
+    destino: 'Bariloche',
+    fecha: '2027-01-15',
+    disponibilidad: 100
+  } : {
+    id: 11,
+    origen: 'Bariloche',
+    destino: 'Buenos Aires',
+    fecha: '2027-01-22',
+    disponibilidad: 100
+  }
+};
 
 Before(function () {
-  app = createApp({ database: createDatabase(), healthCheck: async () => {} });
+  app = createApp({
+    database: createDatabase(),
+    healthCheck: async () => {},
+    flightApiClient
+  });
   this.response = null;
   this.token = jwt.sign({ id: 1, rol: 'admin' }, process.env.JWT_SECRET);
 });
@@ -58,7 +79,11 @@ When('Creo un paquete llamado {string} con destino {string}', async function (no
       origen: 'Buenos Aires',
       descripcion: 'Paquete de prueba',
       precio: 10500,
-      hotel_id: 1
+      hotel_id: 1,
+      vuelo_ida_id: 10,
+      vuelo_vuelta_id: 11,
+      fecha_ida: '2027-01-15',
+      fecha_vuelta: '2027-01-22'
     });
 });
 

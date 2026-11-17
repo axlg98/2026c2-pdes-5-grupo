@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, integer, text, varchar, unique, check } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, varchar, unique, check, date } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable('usuarios', {
     id: serial('id').primaryKey(),
@@ -28,6 +28,10 @@ export const paquete = pgTable('paquete', {
     paquete_id: serial('paquete_id').primaryKey(),
     agencia_id: integer('agencia_id').notNull().references(() => agencia.agencia_id),
     hotel_id: integer('hotel_id').notNull().references(() => hoteles.id),
+    vuelo_ida_id: integer('vuelo_ida_id').notNull(),
+    vuelo_vuelta_id: integer('vuelo_vuelta_id').notNull(),
+    fecha_ida: date('fecha_ida').notNull(),
+    fecha_vuelta: date('fecha_vuelta').notNull(),
     precio: text('precio').notNull(),
     descripcion: text('descripcion').notNull(),
     nombre: varchar('nombre', {length:100}),

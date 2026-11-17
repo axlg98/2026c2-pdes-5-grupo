@@ -2,13 +2,28 @@ import jwt from 'jsonwebtoken';
 import assert from 'node:assert/strict';
 import test, { after, before, describe } from 'node:test';
 import { createApp } from '../../app.js';
-import { agencia } from '../../db/schema.js';
+import { agencia, hoteles } from '../../db/schema.js';
 
 process.env.JWT_SECRET ||= 'secreto-de-test';
 
 const firmar = (payload) => jwt.sign(payload, process.env.JWT_SECRET);
 const tokenAdmin = firmar({ id: 3, rol: 'admin' });
 const tokenComprador = firmar({ id: 5, rol: 'comprador' });
+const flightApiClient = {
+  getFlight: async (id) => id === 10 ? {
+    id: 10,
+    origen: 'Buenos Aires',
+    destino: 'Bariloche',
+    fecha: '2027-01-15',
+    disponibilidad: 100
+  } : {
+    id: 11,
+    origen: 'Bariloche',
+    destino: 'Buenos Aires',
+    fecha: '2027-01-22',
+    disponibilidad: 100
+  }
+};
 
 const createDatabase = ({
   agencyRecord = { agencia_id: 7, user_id: 3 },
@@ -20,7 +35,9 @@ const createDatabase = ({
         return {
           where: async () => table === agencia
             ? (agencyRecord ? [agencyRecord] : [])
-            : packages
+            : table === hoteles
+              ? [{ id: 1, nombre: 'Hotel Sur', destino: 'Bariloche' }]
+              : packages
         };
       }
     };
@@ -60,7 +77,11 @@ const createDatabase = ({
   }
 });
 
-const app = createApp({ database: createDatabase(), healthCheck: async () => {} });
+const app = createApp({
+  database: createDatabase(),
+  healthCheck: async () => {},
+  flightApiClient
+});
 let server;
 let baseUrl;
 
@@ -166,10 +187,15 @@ describe('API de agencia', () => {
   test('POST /api/agencia/paquetes crea un paquete', async () => {
     const paquete = {
       nombre: 'Escapada al Sur',
-      destino: 'Tierra del Fuego',
+      destino: 'Bariloche',
       origen: 'Buenos Aires',
       descripcion: 'Viaje de fin de semana',
-      precio: 2500
+      precio: 2500,
+      hotel_id: 1,
+      vuelo_ida_id: 10,
+      vuelo_vuelta_id: 11,
+      fecha_ida: '2027-01-15',
+      fecha_vuelta: '2027-01-22'
     };
     const response = await fetch(
       `${baseUrl}/api/agencia/paquetes`,
@@ -197,9 +223,14 @@ describe('API de agencia', () => {
     const cambios = {
       nombre: 'Nuevo Sur',
       destino: 'Bariloche',
-      origen: 'Corrientes',
+      origen: 'Buenos Aires',
       descripcion: 'Se actualizó el nuevo viaje',
-      precio: 2000
+      precio: 2000,
+      hotel_id: 1,
+      vuelo_ida_id: 10,
+      vuelo_vuelta_id: 11,
+      fecha_ida: '2027-01-15',
+      fecha_vuelta: '2027-01-22'
     };
     const resp = await fetch(
       `${baseUrl}/api/agencia/paquetes/4`,

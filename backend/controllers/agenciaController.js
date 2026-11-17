@@ -1,6 +1,7 @@
 import { db } from '../db/connection.js';
-import { agencia, paquete } from '../db/schema.js';
+import { agencia, hoteles, paquete } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { createFlightApiClient, FlightApiError } from '../services/flightApiClient.js';
 
 const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
   const [agenciaUsuario] = await database
@@ -11,7 +12,115 @@ const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
   return agenciaUsuario;
 };
 
-export const createAgenciaController = (database = db) => ({
+const normalizarTexto = (value) => typeof value === 'string'
+  ? value.trim().toLocaleLowerCase('es')
+  : '';
+
+const parsePositiveInteger = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const validarFecha = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const fecha = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === value;
+};
+
+const validarPaqueteCompleto = async ({
+  database,
+  flightApiClient,
+  body
+}) => {
+  const {
+    nombre, destino, origen, descripcion, precio, hotel_id,
+    vuelo_ida_id, vuelo_vuelta_id, fecha_ida, fecha_vuelta
+  } = body ?? {};
+
+  if (!nombre || !destino || !origen || !descripcion || !precio ||
+      !hotel_id || !vuelo_ida_id || !vuelo_vuelta_id || !fecha_ida || !fecha_vuelta) {
+    return { status: 400, error: "Faltan datos obligatorios del paquete" };
+  }
+
+  const precioNumerico = Number(precio);
+  if (!Number.isFinite(precioNumerico) || precioNumerico <= 0) {
+    return { status: 400, error: "El precio debe ser mayor a 0" };
+  }
+
+  const hotelId = parsePositiveInteger(hotel_id);
+  const vueloIdaId = parsePositiveInteger(vuelo_ida_id);
+  const vueloVueltaId = parsePositiveInteger(vuelo_vuelta_id);
+  if (!hotelId || !vueloIdaId || !vueloVueltaId) {
+    return {
+      status: 400,
+      error: "hotel_id, vuelo_ida_id y vuelo_vuelta_id deben ser identificadores positivos."
+    };
+  }
+  if (vueloIdaId === vueloVueltaId) {
+    return { status: 400, error: "El vuelo de ida y el vuelo de vuelta deben ser diferentes." };
+  }
+  if (!validarFecha(fecha_ida) || !validarFecha(fecha_vuelta)) {
+    return { status: 400, error: "Las fechas deben tener formato YYYY-MM-DD." };
+  }
+  if (fecha_vuelta < fecha_ida) {
+    return { status: 400, error: "La fecha de vuelta no puede ser anterior a la fecha de ida." };
+  }
+
+  const [hotel] = await database.select().from(hoteles).where(eq(hoteles.id, hotelId));
+  if (!hotel) return { status: 404, error: "El hotel no existe." };
+  if (normalizarTexto(hotel.destino) !== normalizarTexto(destino)) {
+    return { status: 400, error: "El hotel debe pertenecer al destino del paquete." };
+  }
+
+  let vueloIda;
+  let vueloVuelta;
+  try {
+    [vueloIda, vueloVuelta] = await Promise.all([
+      flightApiClient.getFlight(vueloIdaId),
+      flightApiClient.getFlight(vueloVueltaId)
+    ]);
+  } catch (error) {
+    if (error instanceof FlightApiError) {
+      return { status: error.status, error: error.message };
+    }
+    throw error;
+  }
+
+  if (normalizarTexto(vueloIda.origen) !== normalizarTexto(origen) ||
+      normalizarTexto(vueloIda.destino) !== normalizarTexto(destino)) {
+    return { status: 400, error: "El vuelo de ida no coincide con el origen y destino del paquete." };
+  }
+  if (normalizarTexto(vueloVuelta.origen) !== normalizarTexto(destino) ||
+      normalizarTexto(vueloVuelta.destino) !== normalizarTexto(origen)) {
+    return { status: 400, error: "El vuelo de vuelta no coincide con el trayecto del paquete." };
+  }
+  if (vueloIda.fecha !== fecha_ida || vueloVuelta.fecha !== fecha_vuelta) {
+    return { status: 400, error: "Las fechas del paquete deben coincidir con las fechas de los vuelos." };
+  }
+  if (Number(vueloIda.disponibilidad) < 1 || Number(vueloVuelta.disponibilidad) < 1) {
+    return { status: 409, error: "Los vuelos seleccionados no tienen disponibilidad." };
+  }
+
+  return {
+    values: {
+      hotel_id: hotelId,
+      vuelo_ida_id: vueloIdaId,
+      vuelo_vuelta_id: vueloVueltaId,
+      fecha_ida,
+      fecha_vuelta,
+      nombre: nombre.trim(),
+      descripcion: descripcion.trim(),
+      origen: origen.trim(),
+      destino: destino.trim(),
+      precio: String(precioNumerico)
+    }
+  };
+};
+
+export const createAgenciaController = (
+  database = db,
+  { flightApiClient = createFlightApiClient() } = {}
+) => ({
   altaAgencia: async (req, res) => {
     try {
       const { nombre, email, telefono } = req.body ?? {};
@@ -63,25 +172,14 @@ export const createAgenciaController = (database = db) => ({
         return res.status(403).json({ error: "El usuario no tiene una agencia" });
       }
 
-      const { nombre, destino, origen, descripcion, precio } = req.body;
-
-      if (!nombre || !destino || !origen || !descripcion || !precio) {
-        return res.status(400).json({ error: "Faltan datos obligatorios del paquete" });
-      }
-
-      if (Number(precio) <= 0) {
-        return res.status(400).json({ error: "El precio debe ser mayor a 0" });
-      }
+      const validacion = await validarPaqueteCompleto({ database, flightApiClient, body: req.body });
+      if (validacion.error) return res.status(validacion.status).json({ error: validacion.error });
 
       const [nuevoPaquete] = await database
         .insert(paquete)
         .values({
           agencia_id: agenciaUsuario.agencia_id,
-          nombre,
-          descripcion,
-          origen,
-          destino,
-          precio: String(precio)
+          ...validacion.values
         })
         .returning();
 
@@ -102,29 +200,16 @@ export const createAgenciaController = (database = db) => ({
       }
 
       const paqueteId = Number(req.params.paquete_id);
-      const { nombre, destino, origen, descripcion, precio } = req.body;
+      const validacion = await validarPaqueteCompleto({ database, flightApiClient, body: req.body });
 
       if (!paqueteId) {
         return res.status(400).json({ error: "Falta el id del paquete" });
       }
-
-      if (!nombre || !destino || !origen || !descripcion || !precio) {
-        return res.status(400).json({ error: "Faltan datos obligatorios del paquete" });
-      }
-
-      if (Number(precio) <= 0) {
-        return res.status(400).json({ error: "El precio debe ser mayor a 0" });
-      }
+      if (validacion.error) return res.status(validacion.status).json({ error: validacion.error });
 
       const [paqueteActualizado] = await database
         .update(paquete)
-        .set({
-          nombre,
-          destino,
-          origen,
-          descripcion,
-          precio: String(precio)
-        })
+        .set(validacion.values)
         .where(
           and(
             eq(paquete.paquete_id, paqueteId),
