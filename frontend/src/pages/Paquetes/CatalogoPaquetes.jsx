@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { obtenerPaquetesService } from '../../services/paquetesService';
 import { guardarFavoritosService } from '../../services/favoritosService';
+import { comprarPaqueteService } from '../../services/comprasService';
 import { getUser } from '../../services/storage';
 
 const filtrosIniciales = {
@@ -17,6 +18,9 @@ export default function CatalogoPaquetes() {
   const [filtros, setFiltros] = useState(filtrosIniciales);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [paqueteCompra, setPaqueteCompra] = useState(null);
+  const [nombrePasajero, setNombrePasajero] = useState('');
+  const [comprando, setComprando] = useState(false);
   const user = getUser();
 
   const cargar = async (values = filtros) => {
@@ -55,6 +59,22 @@ export default function CatalogoPaquetes() {
       setError('');
     } catch (requestError) {
       setError(requestError.message);
+    }
+  };
+
+  const comprar = async (event) => {
+    event.preventDefault();
+    setComprando(true);
+    setError('');
+    try {
+      await comprarPaqueteService(paqueteCompra.paquete_id, nombrePasajero);
+      setPaqueteCompra(null);
+      setNombrePasajero('');
+      setError('Compra registrada correctamente.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setComprando(false);
     }
   };
 
@@ -117,9 +137,10 @@ export default function CatalogoPaquetes() {
                 <div className="package-card-footer">
                   <strong>${Number(paquete.precio).toLocaleString('es-AR')}</strong>
                   {user?.rol === 'comprador' ? (
-                    <button type="button" onClick={() => guardarFavorito(paquete.paquete_id)}>
-                      Guardar
-                    </button>
+                    <>
+                      <button type="button" onClick={() => guardarFavorito(paquete.paquete_id)}>Guardar</button>
+                      <button type="button" onClick={() => setPaqueteCompra(paquete)}>Comprar</button>
+                    </>
                   ) : (
                     <Link to="/login">Iniciar sesión</Link>
                   )}
@@ -128,6 +149,38 @@ export default function CatalogoPaquetes() {
             </article>
           ))}
         </section>
+      )}
+
+      {paqueteCompra && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchase-title">
+            <h2 id="purchase-title">Confirmar compra</h2>
+            <p><strong>{paqueteCompra.nombre}</strong></p>
+            <p>{paqueteCompra.origen} → {paqueteCompra.destino}</p>
+            <p>Hotel: {paqueteCompra.hotel}</p>
+            <p>Salida: {paqueteCompra.fecha_ida}</p>
+            <p>Regreso: {paqueteCompra.fecha_vuelta}</p>
+            <p className="purchase-price">${Number(paqueteCompra.precio).toLocaleString('es-AR')}</p>
+            <form onSubmit={comprar}>
+              <label>
+                Nombre del pasajero
+                <input
+                  value={nombrePasajero}
+                  onChange={(event) => setNombrePasajero(event.target.value)}
+                  required
+                  minLength="3"
+                  autoFocus
+                />
+              </label>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setPaqueteCompra(null)} disabled={comprando}>Cancelar</button>
+                <button type="submit" className="primary-button" disabled={comprando}>
+                  {comprando ? 'Procesando...' : 'Confirmar compra'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
       )}
     </main>
   );

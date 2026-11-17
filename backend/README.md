@@ -85,3 +85,11 @@ Una compra registra el precio vigente, el hotel, los vuelos, las fechas y los
 identificadores de las ventas externas. Primero vende ambos vuelos y luego
 guarda la compra. Si alguna operación falla, se reembolsa la venta realizada
 para restaurar la disponibilidad.
+
+## Usuarios de demostración
+
+| Rol | Usuario | Contraseña |
+|---|---|---|
+| Administrador | `admin` | `123456` |
+| Comprador | `comprador@ctv.com` | `comprador123` |
+| Agencia | `agencia@ctv.com` | `agencia123` |

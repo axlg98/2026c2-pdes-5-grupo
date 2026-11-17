@@ -43,6 +43,13 @@
       "when": 1794953905878,
       "tag": "0005_real_medusa",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794955976939,
+      "tag": "0006_ancient_sister_grimm",
+      "breakpoints": true
     }
   ]
 }

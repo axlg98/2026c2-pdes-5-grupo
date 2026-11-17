@@ -104,6 +104,98 @@ export const createCompraController = (
     }
   },
 
+  modificarCompra: async (req, res) => {
+    const compraId = parsePositiveInteger(req.params.compra_id);
+    const nombrePasajero = typeof req.body?.nombre_pasajero === 'string'
+      ? req.body.nombre_pasajero.trim()
+      : '';
+
+    if (!compraId) {
+      return res.status(400).json({ error: 'compra_id debe ser positivo.' });
+    }
+    if (!nombrePasajero) {
+      return res.status(400).json({ error: 'nombre_pasajero es obligatorio.' });
+    }
+
+    try {
+      const [actual] = await database.select()
+        .from(compra)
+        .where(req.user.rol === 'admin'
+          ? eq(compra.compra_id, compraId)
+          : and(eq(compra.compra_id, compraId), eq(compra.user_id, req.user.id)));
+
+      if (!actual) return res.status(404).json({ error: 'Compra no encontrada.' });
+      if (actual.estado === 'cancelada') {
+        return res.status(409).json({ error: 'Una compra cancelada no puede modificarse.' });
+      }
+
+      const [actualizada] = await database.update(compra)
+        .set({
+          nombre_pasajero: nombrePasajero,
+          actualizado_en: new Date()
+        })
+        .where(eq(compra.compra_id, compraId))
+        .returning();
+
+      return res.status(200).json({
+        mensaje: 'Compra modificada correctamente.',
+        compra: actualizada
+      });
+    } catch (error) {
+      console.error('Error updating purchase:', error);
+      return res.status(500).json({ error: 'No se pudo modificar la compra.' });
+    }
+  },
+
+  cancelarCompra: async (req, res) => {
+    const compraId = parsePositiveInteger(req.params.compra_id);
+    if (!compraId) {
+      return res.status(400).json({ error: 'compra_id debe ser positivo.' });
+    }
+
+    try {
+      const [actual] = await database.select()
+        .from(compra)
+        .where(req.user.rol === 'admin'
+          ? eq(compra.compra_id, compraId)
+          : and(eq(compra.compra_id, compraId), eq(compra.user_id, req.user.id)));
+
+      if (!actual) return res.status(404).json({ error: 'Compra no encontrada.' });
+      if (actual.estado === 'cancelada') {
+        return res.status(409).json({ error: 'La compra ya está cancelada.' });
+      }
+
+      const refunds = await Promise.allSettled([
+        flightApiClient.refundFlight(actual.vuelo_ida_id, actual.venta_vuelo_ida_id),
+        flightApiClient.refundFlight(actual.vuelo_vuelta_id, actual.venta_vuelo_vuelta_id)
+      ]);
+      const failed = refunds.find((result) => result.status === 'rejected');
+      if (failed) {
+        console.error('Could not refund purchase flights:', failed.reason);
+        return res.status(502).json({
+          error: 'No se pudo completar el reembolso de los vuelos.'
+        });
+      }
+
+      const [cancelada] = await database.update(compra)
+        .set({
+          estado: 'cancelada',
+          cancelada_en: new Date(),
+          actualizado_en: new Date()
+        })
+        .where(eq(compra.compra_id, compraId))
+        .returning();
+
+      return res.status(200).json({
+        mensaje: 'Compra cancelada y vuelos reembolsados.',
+        compra: cancelada
+      });
+    } catch (error) {
+      console.error('Error cancelling purchase:', error);
+      return res.status(500).json({ error: 'No se pudo cancelar la compra.' });
+    }
+  },
+
   listarMisCompras: async (req, res) => {
     try {
       let compras;

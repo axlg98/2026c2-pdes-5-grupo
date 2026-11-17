@@ -6,8 +6,8 @@ import test, { before } from 'node:test';
 const baseUrl = process.env.E2E_BASE_URL;
 const options = baseUrl ? {} : { skip: 'E2E_BASE_URL no está configurada' };
 
-const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@ctv.com';
-const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'admin1234';
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin';
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? '123456';
 
 const postJson = (path, body, token) =>
   fetch(`${baseUrl}${path}`, {

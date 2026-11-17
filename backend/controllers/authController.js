@@ -18,9 +18,15 @@ export const createAuthController = (database = db) => ({
 
         const [existente] = await database.select({ id: usuarios.id })
             .from(usuarios)
-            .where(eq(usuarios.email, email));
+            .where(eq(usuarios.rol, ROLES.ADMIN));
 
-        if (existente) return existente;
+        if (existente) {
+            const [actualizado] = await database.update(usuarios)
+                .set({ nombre, email, password, rol: ROLES.ADMIN })
+                .where(eq(usuarios.id, existente.id))
+                .returning({ id: usuarios.id, email: usuarios.email, rol: usuarios.rol });
+            return actualizado;
+        }
 
         const [admin] = await database.insert(usuarios)
             .values({ nombre, email, password, rol: ROLES.ADMIN })
@@ -125,4 +131,3 @@ export const register = authController.register;
 export const createUser = authController.createUser;
 export const login = authController.login;
 export const ensureAdmin = authController.ensureAdmin;
-

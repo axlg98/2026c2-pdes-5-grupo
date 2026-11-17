@@ -70,11 +70,11 @@ function Login() {
 
         <form className="register-form" onSubmit={handleSubmit}>
           <label htmlFor="login-email">
-            Email
+            Usuario o email
             <input
               id="login-email"
               name="email"
-              type="email"
+              type="text"
               value={form.email}
               onChange={handleChange}
               autoComplete="email"

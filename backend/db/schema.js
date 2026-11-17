@@ -64,5 +64,8 @@ export const compra = pgTable('compra', {
     fecha_compra: timestamp('fecha_compra', {withTimezone:true}).defaultNow().notNull(),
     fecha_ida: date('fecha_ida').notNull(),
     fecha_vuelta: date('fecha_vuelta').notNull(),
-    precio_pagado: numeric('precio_pagado', {precision:12, scale:2}).notNull()
+    precio_pagado: numeric('precio_pagado', {precision:12, scale:2}).notNull(),
+    estado: varchar('estado', {length:20}).notNull().default('activa'),
+    actualizado_en: timestamp('actualizado_en', {withTimezone:true}).defaultNow().notNull(),
+    cancelada_en: timestamp('cancelada_en', {withTimezone:true})
 })

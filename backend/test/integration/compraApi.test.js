@@ -19,12 +19,14 @@ const createDatabase = () => ({
   select() {
     return {
       from(table) {
+        const result = Promise.resolve(table === compra
+          ? [{ compra_id: 44, user_id: 5, precio_pagado: '285000' }]
+          : []);
+        result.orderBy = async () => table === compra
+          ? [{ compra_id: 44, user_id: 5, precio_pagado: '285000' }]
+          : [];
         return {
-          where: () => ({
-            orderBy: async () => table === compra
-              ? [{ compra_id: 44, user_id: 5, precio_pagado: '285000' }]
-              : []
-          }),
+          where: () => result,
           orderBy: async () => table === compra
             ? [{ compra_id: 44, user_id: 5, precio_pagado: '285000' }]
             : []
@@ -84,4 +86,20 @@ test('GET /api/compras devuelve el historial del comprador', async () => {
   assert.equal(response.status, 200);
   assert.equal(body.compras[0].compra_id, 44);
   assert.equal(body.compras[0].precio_pagado, '285000');
+});
+
+test('PUT /api/compras/:id requiere pasajero', async () => {
+  const response = await fetch(
+    `${baseUrl}/api/compras/44`,
+    request('PUT', tokenComprador, {})
+  );
+  assert.equal(response.status, 400);
+});
+
+test('DELETE /api/compras/:id exige comprador o administrador', async () => {
+  const response = await fetch(
+    `${baseUrl}/api/compras/44`,
+    request('DELETE', tokenComprador)
+  );
+  assert.ok([200, 404, 502].includes(response.status));
 });

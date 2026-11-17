@@ -10,5 +10,7 @@ export default function createCompraRouter(database, options = {}) {
   router.post('/', auth, requireRol(ROLES.COMPRADOR), controller.comprar);
   router.get('/', auth, requireRol(ROLES.COMPRADOR, ROLES.ADMIN), controller.listarMisCompras);
   router.get('/:compra_id', auth, requireRol(ROLES.COMPRADOR, ROLES.ADMIN), controller.obtenerCompra);
+  router.put('/:compra_id', auth, requireRol(ROLES.COMPRADOR, ROLES.ADMIN), controller.modificarCompra);
+  router.delete('/:compra_id', auth, requireRol(ROLES.COMPRADOR, ROLES.ADMIN), controller.cancelarCompra);
   return router;
 }

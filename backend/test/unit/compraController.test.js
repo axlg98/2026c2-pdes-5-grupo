@@ -21,7 +21,11 @@ const paqueteDemo = {
   precio: '285000'
 };
 
-const createDatabase = ({ persistError = null, purchases = [] } = {}) => ({
+const createDatabase = ({
+  persistError = null,
+  purchases = [],
+  purchaseRecord = null
+} = {}) => ({
   select() {
     return {
       from(table) {
@@ -29,7 +33,7 @@ const createDatabase = ({ persistError = null, purchases = [] } = {}) => ({
           return { where: async () => [paqueteDemo] };
         }
         return {
-          where: () => ({ orderBy: async () => purchases }),
+          where: async () => purchaseRecord ? [purchaseRecord] : purchases,
           orderBy: async () => purchases
         };
       }
@@ -52,6 +56,24 @@ const createDatabase = ({ persistError = null, purchases = [] } = {}) => ({
         };
       }
     });
+  },
+  update(table) {
+    return {
+      set(values) {
+        return {
+          where() {
+            return {
+              returning: async () => [{
+                compra_id: purchaseRecord?.compra_id ?? 44,
+                user_id: 5,
+                estado: 'activa',
+                ...values
+              }]
+            };
+          }
+        };
+      }
+    };
   }
 });
 
@@ -140,9 +162,30 @@ describe('Compras', () => {
   });
 
   test('devuelve el historial del comprador', async () => {
-    const controller = createCompraController(createDatabase({
-      purchases: [{ compra_id: 44, user_id: 5, precio_pagado: '285000' }]
-    }));
+    const controller = createCompraController({
+      select() {
+        return {
+          from() {
+            return {
+              where() {
+                return {
+                  orderBy: async () => [{
+                    compra_id: 44,
+                    user_id: 5,
+                    precio_pagado: '285000'
+                  }]
+                };
+              },
+              orderBy: async () => [{
+                compra_id: 44,
+                user_id: 5,
+                precio_pagado: '285000'
+              }]
+            };
+          }
+        };
+      }
+    });
     const res = createResponse();
     await controller.listarMisCompras({
       user: { id: 5, rol: 'comprador' }
@@ -151,5 +194,73 @@ describe('Compras', () => {
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.compras.length, 1);
     assert.equal(res.body.compras[0].precio_pagado, '285000');
+  });
+
+  test('modifica el nombre del pasajero de una compra activa', async () => {
+    const controller = createCompraController(createDatabase({
+      purchaseRecord: {
+        compra_id: 44,
+        user_id: 5,
+        estado: 'activa',
+        nombre_pasajero: 'Juan Perez'
+      }
+    }));
+    const res = createResponse();
+    await controller.modificarCompra({
+      user: { id: 5, rol: 'comprador' },
+      params: { compra_id: '44' },
+      body: { nombre_pasajero: 'Juan Carlos Perez' }
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.compra.nombre_pasajero, 'Juan Carlos Perez');
+  });
+
+  test('impide modificar una compra cancelada', async () => {
+    const controller = createCompraController(createDatabase({
+      purchaseRecord: {
+        compra_id: 44,
+        user_id: 5,
+        estado: 'cancelada'
+      }
+    }));
+    const res = createResponse();
+    await controller.modificarCompra({
+      user: { id: 5, rol: 'comprador' },
+      params: { compra_id: '44' },
+      body: { nombre_pasajero: 'Juan Perez' }
+    }, res);
+
+    assert.equal(res.statusCode, 409);
+  });
+
+  test('cancela una compra y reembolsa ambos vuelos', async () => {
+    const refunded = [];
+    const controller = createCompraController(createDatabase({
+      purchaseRecord: {
+        compra_id: 44,
+        user_id: 5,
+        estado: 'activa',
+        vuelo_ida_id: 10,
+        vuelo_vuelta_id: 11,
+        venta_vuelo_ida_id: 101,
+        venta_vuelo_vuelta_id: 102
+      }
+    }), {
+      flightApiClient: {
+        refundFlight: async (flightId, saleId) => refunded.push({ flightId, saleId })
+      }
+    });
+    const res = createResponse();
+    await controller.cancelarCompra({
+      user: { id: 5, rol: 'comprador' },
+      params: { compra_id: '44' }
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(refunded, [
+      { flightId: 10, saleId: 101 },
+      { flightId: 11, saleId: 102 }
+    ]);
   });
 });

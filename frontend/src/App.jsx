@@ -6,6 +6,8 @@ import Registro from './pages/Auth/Registro'
 import Login from './pages/Auth/Login'
 import GestionFavoritos from './pages/Favoritos/GestionFavoritos'
 import CatalogoPaquetes from './pages/Paquetes/CatalogoPaquetes'
+import MisCompras from './pages/Compras/MisCompras'
+import VentasAgencia from './pages/Agencia/VentasAgencia'
 import { getUser, removeToken } from './services/storage'
 
 const Layout = ({ children }) => {
@@ -22,7 +24,9 @@ const Layout = ({ children }) => {
         <div>
           <LinkNav to="/paquetes">Paquetes</LinkNav>
           {user?.rol === 'comprador' && <LinkNav to="/favoritos">Favoritos</LinkNav>}
+          {user?.rol === 'comprador' && <LinkNav to="/compras">Mis compras</LinkNav>}
           {(user?.rol === 'agencia' || user?.rol === 'admin') && <LinkNav to="/agencia">Agencia</LinkNav>}
+          {(user?.rol === 'agencia' || user?.rol === 'admin') && <LinkNav to="/agencia/ventas">Ventas</LinkNav>}
           {user?.rol === 'admin' && <LinkNav to="/hotel">Hoteles</LinkNav>}
           {!user ? <LinkNav to="/login">Ingresar</LinkNav> : <button type="button" onClick={cerrarSesion}>Salir</button>}
         </div>
@@ -45,6 +49,8 @@ function App() {
         <Route path='/paquetes' element={<Layout><CatalogoPaquetes /></Layout>} />
         <Route path='/hotel' element={<Layout><GestionHotel/></Layout>} />
         <Route path='/agencia' element={<Layout><GestionAgencia/></Layout>} />
+        <Route path='/agencia/ventas' element={<Layout><VentasAgencia/></Layout>} />
+        <Route path='/compras' element={<Layout><MisCompras/></Layout>} />
         <Route path='/favoritos' element={<Layout><GestionFavoritos/></Layout>}/>
       </Routes>
     </BrowserRouter>
