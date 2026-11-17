@@ -37,7 +37,7 @@ export const createApp = ({
     database,
     flightApiClient ? { flightApiClient } : {}
   ));
-  app.use('/api/agencia',auth, requireRol(ROLES.ADMIN, ROLES.AGENCIA), createAgenciaRouter(
+  app.use('/api/agencia', createAgenciaRouter(
     database,
     flightApiClient ? { flightApiClient } : {}
   ));

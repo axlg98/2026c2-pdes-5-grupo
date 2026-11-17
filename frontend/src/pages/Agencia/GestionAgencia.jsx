@@ -3,8 +3,11 @@ import {
   obtenerMisPaquetesService,
   altaPaqueteService,
   modificarPaqueteService,
-  bajaPaqueteService
+  bajaPaqueteService,
+  obtenerMiAgenciaService,
+  modificarMiAgenciaService
 } from '../../services/agenciaService';
+import { getUser } from '../../services/storage';
 import { obtenerHotelesService } from '../../services/hotelService';
 import { obtenerVuelosService } from '../../services/vuelosService';
 
@@ -30,6 +33,8 @@ export default function GestionAgencia() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [perfil, setPerfil] = useState({ nombre: '', email: '', telefono: '' });
+  const user = getUser();
 
   const cargar = async () => {
     setCargando(true);
@@ -43,6 +48,18 @@ export default function GestionAgencia() {
       setPaquetes(paquetesData.paquetes ?? []);
       setHoteles(hotelesData);
       setVuelos(vuelosData);
+      if (user?.rol === 'agencia') {
+        try {
+          const perfilData = await obtenerMiAgenciaService();
+          setPerfil({
+            nombre: perfilData.agencia?.nombre ?? '',
+            email: perfilData.agencia?.email ?? '',
+            telefono: perfilData.agencia?.telefono ?? ''
+          });
+        } catch (requestError) {
+          setError(requestError.message);
+        }
+      }
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -106,6 +123,22 @@ export default function GestionAgencia() {
     }
   };
 
+  const cambiarPerfil = (event) => {
+    setPerfil((current) => ({ ...current, [event.target.name]: event.target.value }));
+  };
+
+  const guardarPerfil = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMensaje('');
+    try {
+      await modificarMiAgenciaService(perfil);
+      setMensaje('Perfil de agencia actualizado.');
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
   const vuelosIda = vuelos.filter((vuelo) => !form.destino || vuelo.destino.toLowerCase().includes(form.destino.toLowerCase()));
   const vuelosVuelta = vuelos.filter((vuelo) => !form.origen || vuelo.destino.toLowerCase().includes(form.origen.toLowerCase()));
 
@@ -114,6 +147,18 @@ export default function GestionAgencia() {
       <h1>Administración de paquetes</h1>
       {error && <p className="inline-error" role="alert">{error}</p>}
       {mensaje && <p className="inline-success" role="status">{mensaje}</p>}
+
+      {user?.rol === 'agencia' && (
+        <section className="agency-profile">
+          <h2>Mi agencia</h2>
+          <form onSubmit={guardarPerfil} className="agency-profile-form">
+            <label>Nombre<input name="nombre" value={perfil.nombre} onChange={cambiarPerfil} required /></label>
+            <label>Email<input name="email" type="email" value={perfil.email} onChange={cambiarPerfil} required /></label>
+            <label>Teléfono<input name="telefono" value={perfil.telefono} onChange={cambiarPerfil} /></label>
+            <button type="submit" className="primary-button">Guardar perfil</button>
+          </form>
+        </section>
+      )}
 
       <form className="agency-form" onSubmit={guardar}>
         <label>Nombre<input name="nombre" value={form.nombre} onChange={handleChange} required /></label>

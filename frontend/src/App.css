@@ -275,6 +275,15 @@
 .sales-table-wrap { overflow-x: auto; }
 .sales-table { width: 100%; border-collapse: collapse; }
 .sales-table th, .sales-table td { border-bottom: 1px solid var(--border); padding: 10px; text-align: left; }
+.agency-profile { margin-bottom: 24px; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.agency-profile-form { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 12px; align-items: end; }
+.agency-profile-form label { display: grid; gap: 6px; }
+.agency-admin-page { padding: 28px; text-align: left; }
+.agency-admin-form { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 12px; align-items: end; margin-bottom: 24px; }
+.agency-admin-form label { display: grid; gap: 6px; }
+.agency-admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.agency-admin-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.agency-admin-card button { margin-right: 8px; }
 @media (max-width: 800px) {
   .package-grid, .agency-list { grid-template-columns: 1fr; }
   .purchase-grid { grid-template-columns: 1fr; }

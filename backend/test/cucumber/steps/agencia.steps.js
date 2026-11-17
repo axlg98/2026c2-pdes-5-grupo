@@ -56,7 +56,7 @@ Before(function () {
     flightApiClient
   });
   this.response = null;
-  this.token = jwt.sign({ id: 1, rol: 'admin' }, process.env.JWT_SECRET);
+  this.token = jwt.sign({ id: 1, rol: 'agencia' }, process.env.JWT_SECRET);
 });
 
 Given('Que la API de agencias está disponible', async function () {

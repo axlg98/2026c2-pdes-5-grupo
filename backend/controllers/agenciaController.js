@@ -1,6 +1,6 @@
 import { db } from '../db/connection.js';
-import { agencia, hoteles, paquete } from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { agencia, hoteles, paquete, usuarios } from '../db/schema.js';
+import { eq, and, asc } from 'drizzle-orm';
 import { createFlightApiClient, FlightApiError } from '../services/flightApiClient.js';
 
 const obtenerAgenciaDeUsuario = async (database, idUsuario) => {
@@ -121,19 +121,79 @@ export const createAgenciaController = (
   database = db,
   { flightApiClient = createFlightApiClient() } = {}
 ) => ({
+  listarAgencias: async (req, res) => {
+    try {
+      const agencias = await database.select({
+        agencia_id: agencia.agencia_id,
+        user_id: agencia.user_id,
+        nombre: agencia.nombre,
+        email: agencia.email,
+        telefono: agencia.telefono
+      }).from(agencia);
+      return res.status(200).json({ agencias });
+    } catch (error) {
+      return res.status(500).json({ error: 'No se pudieron consultar las agencias.' });
+    }
+  },
+  obtenerAgencia: async (req, res) => {
+    const agenciaId = parsePositiveInteger(req.params.agencia_id);
+    if (!agenciaId) return res.status(400).json({ error: 'agencia_id debe ser positivo.' });
+    try {
+      const [resultado] = await database.select()
+        .from(agencia)
+        .where(eq(agencia.agencia_id, agenciaId));
+      if (!resultado) return res.status(404).json({ error: 'Agencia no encontrada.' });
+      return res.status(200).json({ agencia: resultado });
+    } catch (error) {
+      return res.status(500).json({ error: 'No se pudo consultar la agencia.' });
+    }
+  },
+  obtenerMiAgencia: async (req, res) => {
+    try {
+      const resultado = await obtenerAgenciaDeUsuario(database, req.user.id);
+      if (!resultado) return res.status(404).json({ error: 'El usuario no tiene una agencia asociada.' });
+      return res.status(200).json({ agencia: resultado });
+    } catch (error) {
+      return res.status(500).json({ error: 'No se pudo consultar la agencia.' });
+    }
+  },
+  listarUsuariosAgencia: async (_req, res) => {
+    try {
+      const usuariosAgencia = await database.select({
+        id: usuarios.id,
+        nombre: usuarios.nombre,
+        email: usuarios.email,
+        rol: usuarios.rol
+      }).from(usuarios).where(eq(usuarios.rol, 'agencia')).orderBy(asc(usuarios.nombre));
+      return res.status(200).json({ usuarios: usuariosAgencia });
+    } catch (error) {
+      return res.status(500).json({ error: 'No se pudieron consultar los usuarios agencia.' });
+    }
+  },
   altaAgencia: async (req, res) => {
     try {
-      const { nombre, email, telefono } = req.body ?? {};
+      const { nombre, email, telefono, user_id } = req.body ?? {};
+      const userId = parsePositiveInteger(user_id);
 
       if (typeof nombre !== 'string' || !nombre.trim() ||
           typeof email !== 'string' || !email.trim()) {
         return res.status(400).json({ error: 'El nombre y el email son obligatorios' });
       }
+      if (!userId) {
+        return res.status(400).json({ error: 'user_id debe ser un usuario agencia válido.' });
+      }
+      const [usuario] = await database.select({ id: usuarios.id, rol: usuarios.rol })
+        .from(usuarios)
+        .where(eq(usuarios.id, userId));
+      if (!usuario) return res.status(404).json({ error: 'El usuario no existe.' });
+      if (usuario.rol !== 'agencia') {
+        return res.status(400).json({ error: 'El usuario seleccionado debe tener rol agencia.' });
+      }
 
       const [nuevaAgencia] = await database
         .insert(agencia)
         .values({
-          user_id: req.user.id,
+          user_id: userId,
           nombre: nombre.trim(),
           email: email.trim(),
           telefono: typeof telefono === 'string' && telefono.trim() ? telefono.trim() : null
@@ -151,6 +211,77 @@ export const createAgenciaController = (
         });
       }
       return res.status(500).json({ error: error.message });
+    }
+  },
+  modificarAgencia: async (req, res) => {
+    const agenciaId = parsePositiveInteger(req.params.agencia_id);
+    if (!agenciaId) return res.status(400).json({ error: 'agencia_id debe ser positivo.' });
+    const { nombre, email, telefono, user_id } = req.body ?? {};
+    if (!nombre?.trim() || !email?.trim()) {
+      return res.status(400).json({ error: 'Nombre y email son obligatorios.' });
+    }
+    try {
+      const cambios = {
+        nombre: nombre.trim(),
+        email: email.trim(),
+        telefono: typeof telefono === 'string' && telefono.trim() ? telefono.trim() : null
+      };
+      if (user_id !== undefined) {
+        const userId = parsePositiveInteger(user_id);
+        if (!userId) return res.status(400).json({ error: 'user_id debe ser positivo.' });
+        const [usuario] = await database.select({ rol: usuarios.rol })
+          .from(usuarios).where(eq(usuarios.id, userId));
+        if (!usuario || usuario.rol !== 'agencia') {
+          return res.status(400).json({ error: 'El usuario seleccionado debe tener rol agencia.' });
+        }
+        cambios.user_id = userId;
+      }
+      const [actualizada] = await database.update(agencia)
+        .set(cambios)
+        .where(eq(agencia.agencia_id, agenciaId))
+        .returning();
+      if (!actualizada) return res.status(404).json({ error: 'Agencia no encontrada.' });
+      return res.status(200).json({ mensaje: 'Agencia modificada correctamente.', agencia: actualizada });
+    } catch (error) {
+      if (error.code === '23505') return res.status(409).json({ error: 'El usuario o email ya están asociados.' });
+      return res.status(500).json({ error: 'No se pudo modificar la agencia.' });
+    }
+  },
+  modificarMiAgencia: async (req, res) => {
+    try {
+      const actual = await obtenerAgenciaDeUsuario(database, req.user.id);
+      if (!actual) return res.status(404).json({ error: 'El usuario no tiene una agencia asociada.' });
+      const { nombre, email, telefono } = req.body ?? {};
+      if (!nombre?.trim() || !email?.trim()) {
+        return res.status(400).json({ error: 'Nombre y email son obligatorios.' });
+      }
+      const [actualizada] = await database.update(agencia).set({
+        nombre: nombre.trim(),
+        email: email.trim(),
+        telefono: typeof telefono === 'string' && telefono.trim() ? telefono.trim() : null
+      }).where(eq(agencia.agencia_id, actual.agencia_id)).returning();
+      return res.status(200).json({ mensaje: 'Agencia modificada correctamente.', agencia: actualizada });
+    } catch (error) {
+      if (error.code === '23505') return res.status(409).json({ error: 'El email ya está registrado.' });
+      return res.status(500).json({ error: 'No se pudo modificar la agencia.' });
+    }
+  },
+  bajaAgencia: async (req, res) => {
+    const agenciaId = parsePositiveInteger(req.params.agencia_id);
+    if (!agenciaId) return res.status(400).json({ error: 'agencia_id debe ser positivo.' });
+    try {
+      const [paquetes] = await database.select({ cantidad: paquete.paquete_id })
+        .from(paquete).where(eq(paquete.agencia_id, agenciaId));
+      if (paquetes) {
+        return res.status(409).json({ error: 'No se puede eliminar una agencia con paquetes asociados.' });
+      }
+      const [baja] = await database.delete(agencia)
+        .where(eq(agencia.agencia_id, agenciaId))
+        .returning({ agencia_id: agencia.agencia_id });
+      if (!baja) return res.status(404).json({ error: 'Agencia no encontrada.' });
+      return res.status(200).json({ mensaje: 'Agencia eliminada correctamente.', agencia: baja });
+    } catch (error) {
+      return res.status(500).json({ error: 'No se pudo eliminar la agencia.' });
     }
   },
   obtenerMisPaquetes: async (req, res) => {

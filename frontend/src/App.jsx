@@ -8,6 +8,7 @@ import GestionFavoritos from './pages/Favoritos/GestionFavoritos'
 import CatalogoPaquetes from './pages/Paquetes/CatalogoPaquetes'
 import MisCompras from './pages/Compras/MisCompras'
 import VentasAgencia from './pages/Agencia/VentasAgencia'
+import GestionAgencias from './pages/Admin/GestionAgencias'
 import { getUser, removeToken } from './services/storage'
 
 const Layout = ({ children }) => {
@@ -28,6 +29,7 @@ const Layout = ({ children }) => {
           {(user?.rol === 'agencia' || user?.rol === 'admin') && <LinkNav to="/agencia">Agencia</LinkNav>}
           {(user?.rol === 'agencia' || user?.rol === 'admin') && <LinkNav to="/agencia/ventas">Ventas</LinkNav>}
           {user?.rol === 'admin' && <LinkNav to="/hotel">Hoteles</LinkNav>}
+          {user?.rol === 'admin' && <LinkNav to="/admin/agencias">Agencias</LinkNav>}
           {!user ? <LinkNav to="/login">Ingresar</LinkNav> : <button type="button" onClick={cerrarSesion}>Salir</button>}
         </div>
       </nav>
@@ -38,6 +40,13 @@ const Layout = ({ children }) => {
 
 const LinkNav = ({ to, children }) => <Link to={to}>{children}</Link>;
 
+const RoleRoute = ({ children, roles }) => {
+  const user = getUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!roles.includes(user.rol)) return <Navigate to="/paquetes" replace />;
+  return children;
+};
+
 function App() {
 
   return (
@@ -47,11 +56,12 @@ function App() {
         <Route path='/registro' element={<Layout><Registro /></Layout>} />
         <Route path='/login' element={<Layout><Login /></Layout>} />
         <Route path='/paquetes' element={<Layout><CatalogoPaquetes /></Layout>} />
-        <Route path='/hotel' element={<Layout><GestionHotel/></Layout>} />
-        <Route path='/agencia' element={<Layout><GestionAgencia/></Layout>} />
-        <Route path='/agencia/ventas' element={<Layout><VentasAgencia/></Layout>} />
-        <Route path='/compras' element={<Layout><MisCompras/></Layout>} />
-        <Route path='/favoritos' element={<Layout><GestionFavoritos/></Layout>}/>
+        <Route path='/hotel' element={<RoleRoute roles={['admin']}><Layout><GestionHotel/></Layout></RoleRoute>} />
+        <Route path='/agencia' element={<RoleRoute roles={['agencia', 'admin']}><Layout><GestionAgencia/></Layout></RoleRoute>} />
+        <Route path='/agencia/ventas' element={<RoleRoute roles={['agencia', 'admin']}><Layout><VentasAgencia/></Layout></RoleRoute>} />
+        <Route path='/admin/agencias' element={<RoleRoute roles={['admin']}><Layout><GestionAgencias/></Layout></RoleRoute>} />
+        <Route path='/compras' element={<RoleRoute roles={['comprador']}><Layout><MisCompras/></Layout></RoleRoute>} />
+        <Route path='/favoritos' element={<RoleRoute roles={['comprador']}><Layout><GestionFavoritos/></Layout></RoleRoute>}/>
       </Routes>
     </BrowserRouter>
 
