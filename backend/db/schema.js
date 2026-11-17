@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, integer, text, varchar, unique, check, date } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, varchar, unique, check, date, numeric, timestamp } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable('usuarios', {
     id: serial('id').primaryKey(),
@@ -49,3 +49,20 @@ export const favorito = pgTable('favoritos', {
     unicoPorUsuario: unique().on(t.user_id, t.paquete_id),
     puntajeEnRango: check('puntaje_0_a_10', sql`${t.puntaje} BETWEEN 0 AND 10`)
 }))
+
+export const compra = pgTable('compra', {
+    compra_id: serial('compra_id').primaryKey(),
+    user_id: integer('user_id').notNull().references(() => usuarios.id),
+    paquete_id: integer('paquete_id').notNull().references(() => paquete.paquete_id),
+    agencia_id: integer('agencia_id').notNull().references(() => agencia.agencia_id),
+    hotel_id: integer('hotel_id').notNull().references(() => hoteles.id),
+    vuelo_ida_id: integer('vuelo_ida_id').notNull(),
+    vuelo_vuelta_id: integer('vuelo_vuelta_id').notNull(),
+    venta_vuelo_ida_id: integer('venta_vuelo_ida_id').notNull(),
+    venta_vuelo_vuelta_id: integer('venta_vuelo_vuelta_id').notNull(),
+    nombre_pasajero: varchar('nombre_pasajero', {length:160}).notNull(),
+    fecha_compra: timestamp('fecha_compra', {withTimezone:true}).defaultNow().notNull(),
+    fecha_ida: date('fecha_ida').notNull(),
+    fecha_vuelta: date('fecha_vuelta').notNull(),
+    precio_pagado: numeric('precio_pagado', {precision:12, scale:2}).notNull()
+})

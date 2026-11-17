@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, integer, pgTable, serial, time, date, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, check, integer, pgTable, serial, time, date, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const aerolineas = pgTable("aerolineas", {
   id: serial("id").primaryKey(),
@@ -33,5 +33,7 @@ export const ventasVuelos = pgTable("ventas_vuelos", {
     .notNull()
     .references(() => vuelos.id),
   nombrePasajero: varchar("nombre_pasajero", { length: 160 }).notNull(),
-  vendidoEn: timestamp("vendido_en", { withTimezone: true }).defaultNow().notNull()
+  vendidoEn: timestamp("vendido_en", { withTimezone: true }).defaultNow().notNull(),
+  reembolsado: boolean("reembolsado").default(false).notNull(),
+  reembolsadoEn: timestamp("reembolsado_en", { withTimezone: true })
 });

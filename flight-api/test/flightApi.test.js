@@ -38,6 +38,16 @@ test("POST /api/vuelos/:id/venta valida el pasajero", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({})
   });
+
+  test("POST /api/vuelos/:id/reembolso valida la venta", async () => {
+    const result = await response(createApp({ database: {} }), "/api/vuelos/1/reembolso", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    assert.equal(result.status, 400);
+    assert.match((await result.json()).error, /ventaId/);
+  });
   assert.equal(result.status, 400);
   assert.match((await result.json()).error, /nombrePasajero/);
 });

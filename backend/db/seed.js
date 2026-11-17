@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { agencia, favorito, hoteles, paquete, usuarios } from './schema.js';
+import { agencia, compra, favorito, hoteles, paquete, usuarios } from './schema.js';
 import { fixtureHotels, fixtureUsers } from '../fixtures.js';
 
 const upsertUser = async (database, fixture) => {
@@ -109,6 +109,26 @@ export const seedDatabase = async (
         puntaje: 9,
         comentario: 'Excelente opción para vacaciones.'
       }).onConflictDoNothing();
+
+      const [existingPurchase] = await database.select({ compra_id: compra.compra_id })
+        .from(compra)
+        .where(eq(compra.user_id, users.comprador.id));
+      if (!existingPurchase) {
+        await database.insert(compra).values({
+          user_id: users.comprador.id,
+          paquete_id: barilochePackage.paquete_id,
+          agencia_id: agency?.agencia_id ?? 1,
+          hotel_id: hotelsByDestination.get('Bariloche')?.id ?? 1,
+          vuelo_ida_id: flightsByCode.get('AR1001')?.id ?? 1,
+          vuelo_vuelta_id: flightsByCode.get('AR1002')?.id ?? 2,
+          venta_vuelo_ida_id: 1,
+          venta_vuelo_vuelta_id: 2,
+          nombre_pasajero: 'Comprador Demo',
+          fecha_ida: '2027-01-15',
+          fecha_vuelta: '2027-01-22',
+          precio_pagado: '285000'
+        });
+      }
     }
   }
 

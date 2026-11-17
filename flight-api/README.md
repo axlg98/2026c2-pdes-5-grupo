@@ -17,6 +17,8 @@ Servicio HTTP que administra aerolíneas, vuelos y ventas de vuelos para CTV.
   La disponibilidad se decrementa dentro de una transacción y no se permiten
   ventas cuando llega a cero.
 - `GET /api/ventas`: lista ventas; acepta `vueloId` como filtro.
+- `POST /api/vuelos/:id/reembolso`: recibe `{ "ventaId": 1 }`, marca la venta
+  como reembolsada y restaura una unidad de disponibilidad.
 
 La disponibilidad no se puede modificar directamente: al crear un vuelo comienza
 igual a la capacidad y sólo disminuye al registrar una venta.

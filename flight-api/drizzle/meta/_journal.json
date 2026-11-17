@@ -8,6 +8,13 @@
       "when": 1794872815414,
       "tag": "0000_ambiguous_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794953913589,
+      "tag": "0001_numerous_shooting_star",
+      "breakpoints": true
     }
   ]
 }

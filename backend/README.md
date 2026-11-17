@@ -69,3 +69,19 @@ Ejemplo de alta:
   "fecha_vuelta": "2027-01-22"
 }
 ```
+
+## Compras
+
+- `POST /api/compras`: compra un paquete como comprador. Requiere autenticación
+  y el cuerpo `{ "paquete_id": 1, "nombre_pasajero": "Juan Perez" }`.
+- `GET /api/compras`: devuelve las compras del comprador autenticado. Los
+  administradores pueden consultar todas las compras.
+- `GET /api/compras/:compra_id`: devuelve una compra si pertenece al comprador
+  o si el usuario es administrador.
+- `GET /api/agencia/compras`: devuelve las ventas asociadas a la agencia
+  autenticada.
+
+Una compra registra el precio vigente, el hotel, los vuelos, las fechas y los
+identificadores de las ventas externas. Primero vende ambos vuelos y luego
+guarda la compra. Si alguna operación falla, se reembolsa la venta realizada
+para restaurar la disponibilidad.

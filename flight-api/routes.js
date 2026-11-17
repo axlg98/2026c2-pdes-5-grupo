@@ -17,6 +17,7 @@ export const createRoutes = (database) => {
   router.get("/api/vuelos/:id", flights.getFlight);
   router.post("/api/vuelos/:id/venta", flights.sellFlight);
   router.post("/api/vuelos/:id/ventas", flights.sellFlight);
+  router.post("/api/vuelos/:id/reembolso", flights.refundFlight);
   router.get("/api/ventas", flights.listSales);
 
   return router;

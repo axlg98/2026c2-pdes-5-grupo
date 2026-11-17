@@ -179,6 +179,53 @@ export const createFlightController = (database = db) => ({
     }
   },
 
+  refundFlight: async (req, res) => {
+    const flightId = parsePositiveInteger(req.params.id);
+    const saleId = parsePositiveInteger(req.body?.ventaId);
+    if (!flightId || !saleId) {
+      return res.status(400).json({ error: "El id del vuelo y ventaId son obligatorios." });
+    }
+
+    try {
+      const refund = await database.transaction(async (tx) => {
+        const [sale] = await tx.select()
+          .from(ventasVuelos)
+          .where(and(
+            eq(ventasVuelos.id, saleId),
+            eq(ventasVuelos.vueloId, flightId),
+            eq(ventasVuelos.reembolsado, false)
+          ));
+        if (!sale) return null;
+
+        const [flight] = await tx.update(vuelos)
+          .set({ disponibilidad: sql`${vuelos.disponibilidad} + 1` })
+          .where(and(
+            eq(vuelos.id, flightId),
+            sql`${vuelos.disponibilidad} < ${vuelos.capacidad}`
+          ))
+          .returning();
+        if (!flight) return null;
+
+        const [refundedSale] = await tx.update(ventasVuelos)
+          .set({ reembolsado: true, reembolsadoEn: new Date() })
+          .where(eq(ventasVuelos.id, saleId))
+          .returning();
+        return { venta: refundedSale, vuelo: flight };
+      });
+
+      if (!refund) {
+        return res.status(404).json({ error: "La venta no existe o ya fue reembolsada." });
+      }
+      return res.status(200).json({
+        mensaje: "La venta fue reembolsada y se restableció la disponibilidad.",
+        ...refund
+      });
+    } catch (error) {
+      console.error("Error refunding flight:", error);
+      return res.status(500).json({ error: "No se pudo reembolsar la venta del vuelo." });
+    }
+  },
+
   listSales: async (req, res) => {
     const flightId = req.query.vueloId ? parsePositiveInteger(req.query.vueloId) : null;
     const filters = flightId ? [eq(ventasVuelos.vueloId, flightId)] : [];
