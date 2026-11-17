@@ -5,8 +5,8 @@ import {
   modificarPaqueteService,
   bajaPaqueteService
 } from '../../services/agenciaService';
-
-const ID_USUARIO = 1; //Lo dejo hasta que esté el auth, por ahora dejé el que está a mano ahora.
+import { obtenerHotelesService } from '../../services/hotelService';
+import { obtenerVuelosService } from '../../services/vuelosService';
 
 const paqueteVacio = {
   nombre: '',
@@ -14,153 +14,160 @@ const paqueteVacio = {
   destino: '',
   descripcion: '',
   precio: '',
-  hotel_id: ''
+  hotel_id: '',
+  vuelo_ida_id: '',
+  vuelo_vuelta_id: '',
+  fecha_ida: '',
+  fecha_vuelta: ''
 };
 
-function GestionAgencia() {
+export default function GestionAgencia() {
   const [paquetes, setPaquetes] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const [hoteles, setHoteles] = useState([]);
+  const [vuelos, setVuelos] = useState([]);
   const [form, setForm] = useState(paqueteVacio);
   const [editandoId, setEditandoId] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
-  const cargarPaquetes = async () => {
+  const cargar = async () => {
     setCargando(true);
-    setError(null);
+    setError('');
     try {
-      const data = await obtenerMisPaquetesService(ID_USUARIO);
-      setPaquetes(data.paquetes ?? []);
-    } catch (err) {
-      setError(err.message ?? 'Error al cargar los paquetes');
+      const [paquetesData, hotelesData, vuelosData] = await Promise.all([
+        obtenerMisPaquetesService(),
+        obtenerHotelesService(),
+        obtenerVuelosService()
+      ]);
+      setPaquetes(paquetesData.paquetes ?? []);
+      setHoteles(hotelesData);
+      setVuelos(vuelosData);
+    } catch (requestError) {
+      setError(requestError.message);
     } finally {
       setCargando(false);
     }
   };
 
   useEffect(() => {
-    cargarPaquetes();
+    cargar();
   }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const guardar = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMensaje('');
     try {
-      const payload = { ...form, idUsuario: ID_USUARIO };
       if (editandoId) {
-        await modificarPaqueteService(payload, editandoId);
+        await modificarPaqueteService(form, editandoId);
       } else {
-        await altaPaqueteService(payload);
+        await altaPaqueteService(form);
       }
       setForm(paqueteVacio);
       setEditandoId(null);
-      await cargarPaquetes();
-    } catch (err) {
-      setError(err.message ?? 'Error al guardar el paquete');
+      setMensaje('Paquete guardado correctamente.');
+      await cargar();
+    } catch (requestError) {
+      setError(requestError.message);
     }
   };
 
-  const handleEditar = (paquete) => {
+  const editar = (paquete) => {
     setForm({
-      nombre: paquete.nombre,
-      origen: paquete.origen,
-      destino: paquete.destino,
-      descripcion: paquete.descripcion,
-      precio: paquete.precio,
-      hotel_id: paquete.hotel_id
+      nombre: paquete.nombre ?? '',
+      origen: paquete.origen ?? '',
+      destino: paquete.destino ?? '',
+      descripcion: paquete.descripcion ?? '',
+      precio: paquete.precio ?? '',
+      hotel_id: paquete.hotel_id ?? '',
+      vuelo_ida_id: paquete.vuelo_ida_id ?? '',
+      vuelo_vuelta_id: paquete.vuelo_vuelta_id ?? '',
+      fecha_ida: paquete.fecha_ida ?? '',
+      fecha_vuelta: paquete.fecha_vuelta ?? ''
     });
     setEditandoId(paquete.paquete_id);
   };
 
-  const handleCancelarEdicion = () => {
-    setForm(paqueteVacio);
-    setEditandoId(null);
-  };
-
-  const handleBaja = async (paqueteId) => {
-    if (!confirm('¿Dar de baja este paquete?')) return;
-    setError(null);
+  const eliminar = async (paqueteId) => {
+    if (!window.confirm('¿Eliminar este paquete?')) return;
+    setError('');
     try {
-      await bajaPaqueteService(ID_USUARIO, paqueteId);
-      await cargarPaquetes();
-    } catch (err) {
-      setError(err.message ?? 'Error al eliminar el paquete');
+      await bajaPaqueteService(null, paqueteId);
+      setMensaje('Paquete eliminado.');
+      await cargar();
+    } catch (requestError) {
+      setError(requestError.message);
     }
   };
-  //A lo últimos le pongo style y se mejora
+
+  const vuelosIda = vuelos.filter((vuelo) => !form.destino || vuelo.destino.toLowerCase().includes(form.destino.toLowerCase()));
+  const vuelosVuelta = vuelos.filter((vuelo) => !form.origen || vuelo.destino.toLowerCase().includes(form.origen.toLowerCase()));
+
   return (
-    <div>
-      <h2>Mis paquetes</h2>
+    <main className="agency-page">
+      <h1>Administración de paquetes</h1>
+      {error && <p className="inline-error" role="alert">{error}</p>}
+      {mensaje && <p className="inline-success" role="status">{mensaje}</p>}
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <input name="nombre" 
-         placeholder="Nombre" 
-         value={form.nombre} 
-         onChange={handleChange} required 
-        />
-        <input name="origen" 
-         placeholder="Origen" 
-         value={form.origen} 
-         onChange={handleChange} required 
-        />
-        <input name="destino" 
-          placeholder="Destino" 
-          value={form.destino} 
-          onChange={handleChange} required 
-        />
-        <input name="descripcion" 
-         placeholder="Descripción" 
-         value={form.descripcion} 
-         onChange={handleChange} required 
-        />
-        <input name="precio" 
-         type="number" 
-         placeholder="Precio" 
-         value={form.precio} 
-         onChange={handleChange} required 
-        />
-        <input name="hotel_id" 
-         type="number" 
-         placeholder="ID Hotel" 
-         value={form.hotel_id} 
-         onChange={handleChange} required 
-        />
-        <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear paquete'}</button>
-        {editandoId && <button type="button" onClick={handleCancelarEdicion}>Cancelar</button>}
+      <form className="agency-form" onSubmit={guardar}>
+        <label>Nombre<input name="nombre" value={form.nombre} onChange={handleChange} required /></label>
+        <label>Origen<input name="origen" value={form.origen} onChange={handleChange} required /></label>
+        <label>Destino<input name="destino" value={form.destino} onChange={handleChange} required /></label>
+        <label>Descripción<textarea name="descripcion" value={form.descripcion} onChange={handleChange} required /></label>
+        <label>Precio<input name="precio" type="number" min="1" value={form.precio} onChange={handleChange} required /></label>
+        <label>
+          Hotel
+          <select name="hotel_id" value={form.hotel_id} onChange={handleChange} required>
+            <option value="">Seleccionar hotel</option>
+            {hoteles.map((hotel) => <option key={hotel.id} value={hotel.id}>{hotel.nombre} - {hotel.destino}</option>)}
+          </select>
+        </label>
+        <label>
+          Vuelo de ida
+          <select name="vuelo_ida_id" value={form.vuelo_ida_id} onChange={handleChange} required>
+            <option value="">Seleccionar vuelo</option>
+            {vuelosIda.map((vuelo) => (
+              <option key={vuelo.id} value={vuelo.id}>{vuelo.codigo}: {vuelo.origen} → {vuelo.destino} ({vuelo.fecha})</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Vuelo de vuelta
+          <select name="vuelo_vuelta_id" value={form.vuelo_vuelta_id} onChange={handleChange} required>
+            <option value="">Seleccionar vuelo</option>
+            {vuelosVuelta.map((vuelo) => (
+              <option key={vuelo.id} value={vuelo.id}>{vuelo.codigo}: {vuelo.origen} → {vuelo.destino} ({vuelo.fecha})</option>
+            ))}
+          </select>
+        </label>
+        <label>Fecha ida<input name="fecha_ida" type="date" value={form.fecha_ida} onChange={handleChange} required /></label>
+        <label>Fecha vuelta<input name="fecha_vuelta" type="date" value={form.fecha_vuelta} onChange={handleChange} required /></label>
+        <button type="submit" className="primary-button">{editandoId ? 'Guardar cambios' : 'Crear paquete'}</button>
+        {editandoId && (
+          <button type="button" onClick={() => { setEditandoId(null); setForm(paqueteVacio); }}>Cancelar</button>
+        )}
       </form>
 
-      {cargando ? (
-        <p>Cargando...</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th><th>Origen</th><th>Destino</th><th>Precio</th><th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paquetes.map((p) => (
-              <tr key={p.paquete_id}>
-                <td>{p.nombre}</td>
-                <td>{p.origen}</td>
-                <td>{p.destino}</td>
-                <td>{p.precio}</td>
-                <td>
-                  <button onClick={() => handleEditar(p)}>Editar</button>
-                  <button onClick={() => handleBaja(p.paquete_id)}>Eliminar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {cargando ? <p>Cargando paquetes...</p> : (
+        <section className="agency-list">
+          {paquetes.map((paquete) => (
+            <article key={paquete.paquete_id}>
+              <h2>{paquete.nombre}</h2>
+              <p>{paquete.origen} → {paquete.destino} · ${paquete.precio}</p>
+              <p>Vuelos #{paquete.vuelo_ida_id} / #{paquete.vuelo_vuelta_id}</p>
+              <p>{paquete.fecha_ida} / {paquete.fecha_vuelta}</p>
+              <button type="button" onClick={() => editar(paquete)}>Editar</button>
+              <button type="button" onClick={() => eliminar(paquete.paquete_id)}>Eliminar</button>
+            </article>
+          ))}
+        </section>
       )}
-    </div>
+    </main>
   );
 }
-
-export default GestionAgencia;

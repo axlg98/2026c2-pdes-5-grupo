@@ -34,7 +34,14 @@ function Login() {
 
       setToken(token);
       setUser(usuario);
-      navigate(usuario.rol === 'agencia' ? '/agencia' : '/hotel', { replace: true });
+      navigate(
+        usuario.rol === 'agencia'
+          ? '/agencia'
+          : usuario.rol === 'comprador'
+            ? '/paquetes'
+            : '/hotel',
+        { replace: true }
+      );
     } catch (requestError) {
       setError(requestError.message);
     } finally {

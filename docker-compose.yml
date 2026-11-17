@@ -56,6 +56,9 @@ services:
   ctv-frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+        VITE_FLIGHT_API_URL: ${VITE_FLIGHT_API_URL:-http://localhost:3001}
     container_name: ctv-frontend
     ports:
       - "5173:80"
