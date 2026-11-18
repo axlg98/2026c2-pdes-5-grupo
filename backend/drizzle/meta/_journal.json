@@ -29,6 +29,27 @@
       "when": 1794336217472,
       "tag": "0003_yummy_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794952427745,
+      "tag": "0004_icy_sentinel",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794953905878,
+      "tag": "0005_real_medusa",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794955976939,
+      "tag": "0006_ancient_sister_grimm",
+      "breakpoints": true
     }
   ]
 }

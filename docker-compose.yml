@@ -33,17 +33,20 @@ services:
       - "3000:3000"
     environment:
       JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret}
-      ADMIN_NAME: ${ADMIN_NAME:-Administrador}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ctv.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123456}
       PORT: 3000
       DB_HOST: ctv-postgres
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-ctv}
       DB_USER: ${POSTGRES_USER:-ctv_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-ctv_password}
+      FLIGHT_API_URL: http://flights-api:3001
     depends_on:
       ctv-postgres:
+        condition: service_healthy
+      flights-api:
         condition: service_healthy
 
   # =========================
@@ -53,6 +56,9 @@ services:
   ctv-frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+        VITE_FLIGHT_API_URL: ${VITE_FLIGHT_API_URL:-http://localhost:3001}
     container_name: ctv-frontend
     ports:
       - "5173:80"

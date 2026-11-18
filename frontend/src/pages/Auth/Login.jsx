@@ -34,7 +34,14 @@ function Login() {
 
       setToken(token);
       setUser(usuario);
-      navigate(usuario.rol === 'agencia' ? '/agencia' : '/hotel', { replace: true });
+      navigate(
+        usuario.rol === 'agencia'
+          ? '/agencia'
+          : usuario.rol === 'comprador'
+            ? '/paquetes'
+            : '/hotel',
+        { replace: true }
+      );
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -63,11 +70,11 @@ function Login() {
 
         <form className="register-form" onSubmit={handleSubmit}>
           <label htmlFor="login-email">
-            Email
+            Usuario o email
             <input
               id="login-email"
               name="email"
-              type="email"
+              type="text"
               value={form.email}
               onChange={handleChange}
               autoComplete="email"

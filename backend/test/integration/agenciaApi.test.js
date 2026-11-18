@@ -2,13 +2,29 @@ import jwt from 'jsonwebtoken';
 import assert from 'node:assert/strict';
 import test, { after, before, describe } from 'node:test';
 import { createApp } from '../../app.js';
-import { agencia } from '../../db/schema.js';
+import { agencia, hoteles, usuarios } from '../../db/schema.js';
 
 process.env.JWT_SECRET ||= 'secreto-de-test';
 
 const firmar = (payload) => jwt.sign(payload, process.env.JWT_SECRET);
 const tokenAdmin = firmar({ id: 3, rol: 'admin' });
 const tokenComprador = firmar({ id: 5, rol: 'comprador' });
+const tokenAgencia = firmar({ id: 7, rol: 'agencia' });
+const flightApiClient = {
+  getFlight: async (id) => id === 10 ? {
+    id: 10,
+    origen: 'Buenos Aires',
+    destino: 'Bariloche',
+    fecha: '2027-01-15',
+    disponibilidad: 100
+  } : {
+    id: 11,
+    origen: 'Bariloche',
+    destino: 'Buenos Aires',
+    fecha: '2027-01-22',
+    disponibilidad: 100
+  }
+};
 
 const createDatabase = ({
   agencyRecord = { agencia_id: 7, user_id: 3 },
@@ -20,7 +36,11 @@ const createDatabase = ({
         return {
           where: async () => table === agencia
             ? (agencyRecord ? [agencyRecord] : [])
-            : packages
+            : table === hoteles
+              ? [{ id: 1, nombre: 'Hotel Sur', destino: 'Bariloche' }]
+              : table === usuarios
+                ? [{ id: 7, rol: 'agencia' }]
+                : packages
         };
       }
     };
@@ -60,7 +80,11 @@ const createDatabase = ({
   }
 });
 
-const app = createApp({ database: createDatabase(), healthCheck: async () => {} });
+const app = createApp({
+  database: createDatabase(),
+  healthCheck: async () => {},
+  flightApiClient
+});
 let server;
 let baseUrl;
 
@@ -109,7 +133,8 @@ describe('API de agencia', () => {
     const datosAgencia = {
       nombre: 'Agencia de prueba',
       email: 'agencia@example.com',
-      telefono: '123456789'
+      telefono: '123456789',
+      user_id: 7
     };
     const response = await fetch(
       `${baseUrl}/api/agencia`,
@@ -118,7 +143,7 @@ describe('API de agencia', () => {
     const body = await response.json();
 
     assert.equal(response.status, 201);
-    assert.equal(body.agencia.user_id, 3);
+    assert.equal(body.agencia.user_id, 7);
     assert.equal(body.agencia.nombre, datosAgencia.nombre);
   });
 
@@ -133,8 +158,28 @@ describe('API de agencia', () => {
     assert.deepEqual(body, { error: 'El nombre y el email son obligatorios' });
   });
 
+  test('GET /api/agencia/lista devuelve agencias sólo al administrador', async () => {
+    const adminResponse = await fetch(
+      `${baseUrl}/api/agencia/lista`,
+      request('GET', tokenAdmin)
+    );
+    assert.equal(adminResponse.status, 200);
+
+    const agencyResponse = await fetch(
+      `${baseUrl}/api/agencia/lista`,
+      request('GET', tokenAgencia)
+    );
+    assert.equal(agencyResponse.status, 403);
+
+    const buyerResponse = await fetch(
+      `${baseUrl}/api/agencia/lista`,
+      request('GET', tokenComprador)
+    );
+    assert.equal(buyerResponse.status, 403);
+  });
+
   test('GET /api/agencia/paquetes => Devuelve los paquetes de la agencia', async () => {
-    const response = await fetch(`${baseUrl}/api/agencia/paquetes`, request('GET', tokenAdmin));
+    const response = await fetch(`${baseUrl}/api/agencia/paquetes`, request('GET', tokenAgencia));
     const body = await response.json();
 
     assert.equal(response.status, 200);
@@ -152,7 +197,7 @@ describe('API de agencia', () => {
     await new Promise((resolve) => temporaryServer.once('listening', resolve));
     const urlTemporary = `http://127.0.0.1:${temporaryServer.address().port}`;
     try {
-      const response = await fetch(`${urlTemporary}/api/agencia/paquetes`, request('GET', tokenAdmin));
+      const response = await fetch(`${urlTemporary}/api/agencia/paquetes`, request('GET', tokenAgencia));
       const body = await response.json();
       assert.equal(response.status, 403);
       assert.deepEqual(body, { error: 'El usuario no tiene una agencia' });
@@ -166,14 +211,19 @@ describe('API de agencia', () => {
   test('POST /api/agencia/paquetes crea un paquete', async () => {
     const paquete = {
       nombre: 'Escapada al Sur',
-      destino: 'Tierra del Fuego',
+      destino: 'Bariloche',
       origen: 'Buenos Aires',
       descripcion: 'Viaje de fin de semana',
-      precio: 2500
+      precio: 2500,
+      hotel_id: 1,
+      vuelo_ida_id: 10,
+      vuelo_vuelta_id: 11,
+      fecha_ida: '2027-01-15',
+      fecha_vuelta: '2027-01-22'
     };
     const response = await fetch(
       `${baseUrl}/api/agencia/paquetes`,
-      request('POST', tokenAdmin, paquete)
+      request('POST', tokenAgencia, paquete)
     );
     const body = await response.json();
 
@@ -185,7 +235,7 @@ describe('API de agencia', () => {
   test('POST /api/agencia/paquetes => Responde 400 si faltan datos obligatorios', async () => {
     const response = await fetch(
       `${baseUrl}/api/agencia/paquetes`,
-      request('POST', tokenAdmin, { nombre: 'Paquete Incompleto' })
+      request('POST', tokenAgencia, { nombre: 'Paquete Incompleto' })
     );
     const body = await response.json();
 
@@ -197,13 +247,18 @@ describe('API de agencia', () => {
     const cambios = {
       nombre: 'Nuevo Sur',
       destino: 'Bariloche',
-      origen: 'Corrientes',
+      origen: 'Buenos Aires',
       descripcion: 'Se actualizó el nuevo viaje',
-      precio: 2000
+      precio: 2000,
+      hotel_id: 1,
+      vuelo_ida_id: 10,
+      vuelo_vuelta_id: 11,
+      fecha_ida: '2027-01-15',
+      fecha_vuelta: '2027-01-22'
     };
     const resp = await fetch(
       `${baseUrl}/api/agencia/paquetes/4`,
-      request('PUT', tokenAdmin, cambios)
+      request('PUT', tokenAgencia, cambios)
     );
     const body = await resp.json();
 
@@ -215,7 +270,7 @@ describe('API de agencia', () => {
   test('DELETE /api/agencia/paquetes/:paquete_id => Elimina un paquete', async () => {
     const resp = await fetch(
       `${baseUrl}/api/agencia/paquetes/4`,
-      request('DELETE', tokenAdmin)
+      request('DELETE', tokenAgencia)
     );
     const body = await resp.json();
 
