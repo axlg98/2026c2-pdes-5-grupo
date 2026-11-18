@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, integer, text, varchar, unique, check, date, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, varchar, unique, check, date, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable('usuarios', {
     id: serial('id').primaryKey(),
@@ -7,6 +7,8 @@ export const usuarios = pgTable('usuarios', {
     email: varchar('email', {length:255}).notNull().unique(),
     password: text('password').notNull(),
     rol: varchar('rol', {length:50}).notNull().default('comprador'),
+    activo: boolean('activo').notNull().default(true),
+    actualizado_en: timestamp('actualizado_en', {withTimezone:true}).defaultNow().notNull()
 });
 
 export const hoteles = pgTable('hotel',{
