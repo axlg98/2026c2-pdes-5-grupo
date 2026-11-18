@@ -9,6 +9,7 @@ import CatalogoPaquetes from './pages/Paquetes/CatalogoPaquetes'
 import MisCompras from './pages/Compras/MisCompras'
 import VentasAgencia from './pages/Agencia/VentasAgencia'
 import GestionAgencias from './pages/Admin/GestionAgencias'
+import GestionUsuarios from './pages/Admin/GestionUsuarios'
 import { getUser, removeToken } from './services/storage'
 
 const Layout = ({ children }) => {
@@ -30,6 +31,7 @@ const Layout = ({ children }) => {
           {(user?.rol === 'agencia' || user?.rol === 'admin') && <LinkNav to="/agencia/ventas">Ventas</LinkNav>}
           {user?.rol === 'admin' && <LinkNav to="/hotel">Hoteles</LinkNav>}
           {user?.rol === 'admin' && <LinkNav to="/admin/agencias">Agencias</LinkNav>}
+          {user?.rol === 'admin' && <LinkNav to="/admin/usuarios">Usuarios</LinkNav>}
           {!user ? <LinkNav to="/login">Ingresar</LinkNav> : <button type="button" onClick={cerrarSesion}>Salir</button>}
         </div>
       </nav>
@@ -60,6 +62,7 @@ function App() {
         <Route path='/agencia' element={<RoleRoute roles={['agencia', 'admin']}><Layout><GestionAgencia/></Layout></RoleRoute>} />
         <Route path='/agencia/ventas' element={<RoleRoute roles={['agencia', 'admin']}><Layout><VentasAgencia/></Layout></RoleRoute>} />
         <Route path='/admin/agencias' element={<RoleRoute roles={['admin']}><Layout><GestionAgencias/></Layout></RoleRoute>} />
+        <Route path='/admin/usuarios' element={<RoleRoute roles={['admin']}><Layout><GestionUsuarios/></Layout></RoleRoute>} />
         <Route path='/compras' element={<RoleRoute roles={['comprador']}><Layout><MisCompras/></Layout></RoleRoute>} />
         <Route path='/favoritos' element={<RoleRoute roles={['comprador']}><Layout><GestionFavoritos/></Layout></RoleRoute>}/>
       </Routes>

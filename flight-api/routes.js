@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { createFlightController } from "./controllers/flightController.js";
 import { createInitializationController } from "./controllers/initializationController.js";
+import { auth } from "./middleware/auth.js";
 
 export const createRoutes = (database) => {
   const router = Router();
@@ -8,6 +9,7 @@ export const createRoutes = (database) => {
   const initialization = createInitializationController(database);
 
   router.get("/health", flights.health);
+  router.use("/api", auth);
   router.post("/api/inicializacion", initialization.initialize);
   router.post("/api/initialize", initialization.initialize);
   router.get("/api/aerolineas", flights.listAirlines);

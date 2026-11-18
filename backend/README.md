@@ -93,3 +93,16 @@ para restaurar la disponibilidad.
 | Administrador | `admin` | `123456` |
 | Comprador | `comprador@ctv.com` | `comprador123` |
 | Agencia | `agencia@ctv.com` | `agencia123` |
+
+Usuarios adicionales:
+
+| Rol | Usuario | Contraseña |
+|---|---|---|
+| Comprador | `lucia@comprador.com` | `comprador123` |
+| Comprador | `martin@comprador.com` | `comprador123` |
+| Comprador | `sofia@comprador.com` | `comprador123` |
+| Agencia | `patagonia@agencia.com` | `agencia123` |
+| Agencia | `solymar@agencia.com` | `agencia123` |
+
+Docker carga automáticamente varios paquetes, favoritos y compras demo
+mediante `db/seed.js`.

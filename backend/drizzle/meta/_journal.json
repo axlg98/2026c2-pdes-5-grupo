@@ -50,6 +50,13 @@
       "when": 1794955976939,
       "tag": "0006_ancient_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794961032595,
+      "tag": "0007_glamorous_doomsday",
+      "breakpoints": true
     }
   ]
 }

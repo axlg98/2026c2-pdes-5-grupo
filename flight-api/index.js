@@ -4,6 +4,10 @@ import { aerolineas, vuelos } from "./db/schema.js";
 import { fixtureAirlines, fixtureFlights } from "./fixtures.js";
 
 const PORT = process.env.PORT || 3001;
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET no está configurado.");
+  process.exit(1);
+}
 const app = createApp({ database: db });
 
 const initializeFixtures = async () => {
@@ -23,14 +27,16 @@ const initializeFixtures = async () => {
 };
 
 initializeFixtures()
-  .then(() => console.log("Flight API fixtures initialized"))
+  .then(() => {
+    console.log("Flight API fixtures initialized");
+    app.listen(PORT, () => {
+      console.log(`Flight API running on port ${PORT}`);
+    });
+  })
   .catch((error) => {
     console.error("Could not initialize Flight API fixtures:", error);
+    process.exit(1);
   });
-
-app.listen(PORT, () => {
-  console.log(`Flight API running on port ${PORT}`);
-});
 
 process.on("SIGTERM", async () => {
   await pool.end();

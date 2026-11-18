@@ -39,7 +39,7 @@ function Login() {
           ? '/agencia'
           : usuario.rol === 'comprador'
             ? '/paquetes'
-            : '/hotel',
+            : '/admin/agencias',
         { replace: true }
       );
     } catch (requestError) {

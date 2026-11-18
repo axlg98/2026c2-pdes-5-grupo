@@ -5,6 +5,11 @@ import { seedDatabase } from "./db/seed.js";
 
 const PORT = process.env.PORT || 3000;
 
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET no está configurado.");
+  process.exit(1);
+}
+
 const app = createApp({ healthCheck: () => pool.query("SELECT 1") });
 
 ensureAdmin()

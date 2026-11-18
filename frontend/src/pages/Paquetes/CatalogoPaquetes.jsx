@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { obtenerPaquetesService } from '../../services/paquetesService';
 import { guardarFavoritosService } from '../../services/favoritosService';
@@ -23,7 +23,7 @@ export default function CatalogoPaquetes() {
   const [comprando, setComprando] = useState(false);
   const user = getUser();
 
-  const cargar = async (values = filtros) => {
+  const cargar = useCallback(async (values = filtrosIniciales) => {
     setCargando(true);
     setError('');
     try {
@@ -34,11 +34,12 @@ export default function CatalogoPaquetes() {
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    cargar(filtrosIniciales);
-  }, []);
+    const timer = window.setTimeout(() => cargar(filtrosIniciales), 0);
+    return () => window.clearTimeout(timer);
+  }, [cargar]);
 
   const handleChange = (event) => {
     setFiltros((current) => ({ ...current, [event.target.name]: event.target.value }));

@@ -27,7 +27,8 @@ export default function MisCompras() {
   };
 
   useEffect(() => {
-    cargar();
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const guardar = async (event) => {

@@ -284,6 +284,15 @@
 .agency-admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .agency-admin-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
 .agency-admin-card button { margin-right: 8px; }
+.users-admin-page { padding: 28px; text-align: left; }
+.users-admin-form { display: grid; grid-template-columns: repeat(5, 1fr) auto; gap: 12px; align-items: end; margin-bottom: 24px; }
+.users-admin-form label { display: grid; gap: 6px; }
+.users-admin-form input, .users-admin-form select { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--bg); color: var(--text-h); }
+.checkbox-label { grid-auto-flow: column; align-items: center; justify-content: start; }
+.users-admin-table-wrap { overflow-x: auto; }
+.users-admin-table { width: 100%; border-collapse: collapse; }
+.users-admin-table th, .users-admin-table td { border-bottom: 1px solid var(--border); padding: 10px; text-align: left; }
+.users-admin-table button { margin-right: 8px; }
 @media (max-width: 800px) {
   .package-grid, .agency-list { grid-template-columns: 1fr; }
   .purchase-grid { grid-template-columns: 1fr; }
