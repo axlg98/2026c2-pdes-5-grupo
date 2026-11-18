@@ -15,5 +15,6 @@ Característica: Gestión de hoteles
     Y el hotel creado se llama "Hotel Cucumber Nuevo"
 
   Escenario: Rechazar un hotel incompleto
-    Cuando creo un hotel llamado "Hotel sin destino" en ""
+    Cuando creo un hotel llamado "Hotel sin destino" en "" y lo rechaza
     Entonces la respuesta tiene estado 400
+    Y el hotel lo rechaza por estar incompleto
