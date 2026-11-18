@@ -25,7 +25,10 @@ export default function GestionUsuarios() {
     }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const cambiar = (event) => {
     const { name, value, type, checked } = event.target;

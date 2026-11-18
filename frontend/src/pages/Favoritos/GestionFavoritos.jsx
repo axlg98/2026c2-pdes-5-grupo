@@ -49,8 +49,11 @@ const GestionFavoritos = () => {
   };
 
   useEffect(() => {
-    cargarFavoritos();
-    cargarPaquetes();
+    const timer = window.setTimeout(() => {
+      cargarFavoritos();
+      cargarPaquetes();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleAgregarFavorito = async (paqueteId) => {

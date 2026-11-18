@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   obtenerMisPaquetesService,
   altaPaqueteService,
@@ -36,7 +36,7 @@ export default function GestionAgencia() {
   const [perfil, setPerfil] = useState({ nombre: '', email: '', telefono: '' });
   const user = getUser();
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
@@ -65,11 +65,12 @@ export default function GestionAgencia() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [user?.rol]);
 
   useEffect(() => {
-    cargar();
-  }, []);
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
+  }, [cargar]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

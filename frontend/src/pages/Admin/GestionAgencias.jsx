@@ -31,7 +31,10 @@ export default function GestionAgencias() {
     }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const cambiar = (event) => {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));

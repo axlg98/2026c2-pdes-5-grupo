@@ -9,7 +9,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node db/seed-runner.js",
-    "test": "node --test test/unit/hotelController.test.js test/unit/agenciaController.test.js test/unit/compraController.test.js test/unit/flightApiClient.test.js test/integration/hotelApi.test.js test/integration/agenciaApi.test.js test/integration/paqueteApi.test.js test/integration/compraApi.test.js test/integration/authApi.test.js test/architecture/backendArchitecture.test.js",
+    "test": "node --test test/unit/hotelController.test.js test/unit/agenciaController.test.js test/unit/compraController.test.js test/unit/flightApiClient.test.js test/unit/fixtures.test.js test/integration/hotelApi.test.js test/integration/agenciaApi.test.js test/integration/paqueteApi.test.js test/integration/compraApi.test.js test/integration/authApi.test.js test/architecture/backendArchitecture.test.js",
     "test:cucumber": "cucumber-js --config test/cucumber/cucumber.cjs",
     "test:e2e": "node --test test/e2e/hotelApi.e2e.test.js"
   },

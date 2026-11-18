@@ -1,6 +1,11 @@
 export const fixtureUsers = [
   { nombre: 'Comprador Demo', email: 'comprador@ctv.com', password: 'comprador123', rol: 'comprador' },
-  { nombre: 'Agencia Andes', email: 'agencia@ctv.com', password: 'agencia123', rol: 'agencia' }
+  { nombre: 'Lucia Fernandez', email: 'lucia@comprador.com', password: 'comprador123', rol: 'comprador' },
+  { nombre: 'Martin Rojas', email: 'martin@comprador.com', password: 'comprador123', rol: 'comprador' },
+  { nombre: 'Sofia Alvarez', email: 'sofia@comprador.com', password: 'comprador123', rol: 'comprador' },
+  { nombre: 'Agencia Andes', email: 'agencia@ctv.com', password: 'agencia123', rol: 'agencia' },
+  { nombre: 'Viajes Patagonia', email: 'patagonia@agencia.com', password: 'agencia123', rol: 'agencia' },
+  { nombre: 'Sol & Mar', email: 'solymar@agencia.com', password: 'agencia123', rol: 'agencia' }
 ];
 
 export const fixtureHotels = [
