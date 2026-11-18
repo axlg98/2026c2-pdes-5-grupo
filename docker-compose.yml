@@ -102,6 +102,7 @@ services:
       - "3001:3001"
     environment:
       PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret}
       DB_HOST: flights-postgres
       DB_PORT: 5432
       DB_NAME: ${FLIGHTS_POSTGRES_DB:-flights}

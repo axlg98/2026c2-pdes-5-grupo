@@ -97,6 +97,9 @@ export const createAuthController = (database = db) => ({
             if(!email || !password) {
                 return res.status(400).json({error: 'email y password son obligatorios para el inicio de sesión!.'});
             }
+            if (!process.env.JWT_SECRET) {
+                return res.status(500).json({error: 'JWT_SECRET no está configurado.'});
+            }
 
             const [usuario] = await database.select().from(usuarios)
                                              .where(eq(usuarios.email, email), eq(usuarios.password, password));

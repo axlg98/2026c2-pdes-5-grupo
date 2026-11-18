@@ -4,6 +4,10 @@ import { aerolineas, vuelos } from "./db/schema.js";
 import { fixtureAirlines, fixtureFlights } from "./fixtures.js";
 
 const PORT = process.env.PORT || 3001;
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET no está configurado.");
+  process.exit(1);
+}
 const app = createApp({ database: db });
 
 const initializeFixtures = async () => {
