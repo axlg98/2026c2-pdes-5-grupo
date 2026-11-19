@@ -107,6 +107,11 @@ jobs:
       - run: npm run db:migrate
       - run: npm test
       - run: npm run test:cucumber
+      - name: Install Playwright browser and frontend dependencies
+        run: |
+          npx playwright install --with-deps chromium
+          npm ci --prefix ../frontend
+          
       - name: Start Flight API for integration
         working-directory: flight-api
         env:
@@ -138,7 +143,17 @@ jobs:
           done
           cat /tmp/ctv-backend.log
           exit 1
-      - name: Run backend E2E
+      - name: Start frontend for UI E2E
+        run: |
+          npm --prefix ../frontend run dev -- --host 0.0.0.0 --port 5173 --strictPort > /tmp/ctv-frontend.log 2>&1 &
+          echo $! > /tmp/ctv-frontend.pid
+          for attempt in {1..30}; do
+            if curl --fail http://127.0.0.1:5173/login; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ctv-frontend.log
+          exit 1
+      - name: Run backend and UI E2E
         env:
           E2E_BASE_URL: http://localhost:3000
           E2E_ADMIN_EMAIL: admin
@@ -147,6 +162,7 @@ jobs:
       - name: Stop backend
         if: always()
         run: |
+          if [ -f /tmp/ctv-frontend.pid ]; then kill $(cat /tmp/ctv-frontend.pid) || true; fi
           if [ -f /tmp/ctv-backend.pid ]; then kill $(cat /tmp/ctv-backend.pid) || true; fi
           if [ -f /tmp/flight-api.pid ]; then kill $(cat /tmp/flight-api.pid) || true; fi
 

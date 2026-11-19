@@ -62,10 +62,26 @@ When('creo un hotel llamado {string} en {string}', async function (nombre, desti
   this.responseBody = await this.response.json();
 });
 
+When('creo un hotel llamado {string} en {string} y lo rechaza', async function (nombre, destino) {
+  this.response = await fetch(`${this.baseUrl}/api/hoteles`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.tokenAdmin}`
+    },
+    body: JSON.stringify({ nombre, destino })
+  });
+  this.responseBody = await this.response.json();
+});
+
 Then('la respuesta contiene el hotel {string}', function (nombre) {
   assert.ok(this.responseBody.some((hotel) => hotel.nombre === nombre));
 });
 
 Then('el hotel creado se llama {string}', function (nombre) {
   assert.equal(this.responseBody.hotel.nombre, nombre);
+});
+
+Then('el hotel lo rechaza por estar incompleto', function () {
+  assert.equal(this.responseBody.error, 'El nombre y el destino son obligatorios.');
 });
