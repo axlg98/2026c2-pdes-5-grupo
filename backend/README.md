@@ -10,28 +10,6 @@
   
 --- 
 
-## Cómo levantar el proyecto.
-
-### Levantar los contenedores
-
-1. Para Windows:
-   
-            ```
-            docker compose up --build
-            ```
-2. Para Linux:
-
-            ```
-            sudo docker compose up --build
-            ```
-
-    Esto levanta el backend CTV y sus dependencias configuradas en Docker Compose:
-
-    - **Flight Api** : La api en el puerto 3001
-    - **ctv-backend** : backend en el puerto 3000
-    - **ctv-postgres** : base CTV en el puerto 5432
-    - **flights-postgres** : base de vuelos en el puerto 5433
-
 ## Paquetes con vuelos
 
 Los paquetes de agencia requieren un hotel y dos vuelos publicados por la API
@@ -106,3 +84,23 @@ Usuarios adicionales:
 
 Docker carga automáticamente varios paquetes, favoritos y compras demo
 mediante `db/seed.js`.
+
+---
+# Test
+  ### Todos los test a probar
+
+      Para probar todos los test:
+
+        ```
+          npm run test
+        ```
+  ### Test e2e
+
+        ```
+          npm run test:e2e
+        ```
+  ### test cucumber
+
+        ```
+          npm run test:cucumber
+        ```
