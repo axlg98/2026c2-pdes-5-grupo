@@ -129,6 +129,15 @@ erDiagram
             sudo docker compose down -v
 ```
 
+---
+
+### Pruebas de carga y estrés
+
+El proyecto incluye escenarios de k6 para verificar el recorrido principal con
+carga gradual y estrés. Consultá [load-tests/README.md](./load-tests/README.md)
+para los requisitos, comandos de ejecución y resultados esperados. Las pruebas
+son de solo lectura y usan los usuarios demo.
+
 
 ---
 

@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "k6:smoke": "k6 run load-tests/smoke.js",
+    "k6:load": "k6 run load-tests/load.js",
+    "k6:stress": "k6 run load-tests/stress.js"
+  },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.1"
   }
