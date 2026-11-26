@@ -118,7 +118,8 @@ erDiagram
 ---
 # Usuarios creados por defecto
 
-| Usuario | Email | Password
+| Usuario | Email | Password |
+|---|---|---|
 | `Comprador`	| `comprador@ctv.com`	    | `comprador123` |
 | `Comprador`	| `lucia@comprador.com`	    | `comprador123` |
 | `Comprador`	| `martin@comprador.com`	| `comprador123` |
