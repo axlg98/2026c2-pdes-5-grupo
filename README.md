@@ -4,93 +4,115 @@
 
 ### Diagrama de Entidad de Relación
 
+
+
 ```mermaid
 erDiagram
     USUARIO ||--o| AGENCIA : "tiene"
-    AGENCIA ||--o{ PAQUETE : "ofrece"
-
-    USUARIO ||--o{ FAVORITO : "guarda"
-    PAQUETE ||--o{ FAVORITO : "es de interes"
-
-    USUARIO ||--o{ COMPRA : "realiza"
-    PAQUETE ||--o{ COMPRA : "corresponde"
-
+    AGENCIA ||--o{ PAQUETE : "publica"
     HOTEL ||--o{ PAQUETE : "incluye"
-
+    USUARIO ||--o{ COMPRA : "realiza"
+    PAQUETE ||--o{ COMPRA : "se compra en"
+    AGENCIA ||--o{ COMPRA : "recibe"
+    HOTEL ||--o{ COMPRA : "se reserva en"
+    USUARIO ||--o{ FAVORITO : "guarda"
+    PAQUETE ||--o{ FAVORITO : "es guardado como"
     AEROLINEA ||--o{ VUELO : "publica"
-    PAQUETE }o--|| VUELO : "contiene"
-
+    VUELO ||--o{ VENTA_VUELO : "registra"
 
     USUARIO {
-        int id_usuario PK
-        string username
+        int id PK
         string nombre
-        string apellido
-        string email
+        string email UK
         string password
-        string type_profile
+        string rol
+        boolean activo
+        timestamp actualizado_en
     }
 
     AGENCIA {
-        int id_agencia PK
-        int id_usuario FK
+        int agencia_id PK
+        int user_id FK
         string nombre
-        string email
-        string telefono
+        string email UK
+        text telefono "nullable"
     }
 
     PAQUETE {
-        int id_paquete PK
-        int id_agencia FK
-        int id_vuelo_ida FK
-        int id_vuelo_vuelta FK
-        int id_hotel FK
-        string nombre
-        string descripcion
-        decimal precio
+        int paquete_id PK
+        int agencia_id FK
+        int hotel_id FK
+        int vuelo_ida_id
+        int vuelo_vuelta_id
+        date fecha_ida
+        date fecha_vuelta
+        text precio
+        text descripcion
+        string nombre "nullable"
         string origen
         string destino
-        date fecha
     }
 
     HOTEL {
-        int id_hotel PK
+        int hotel_id PK
         string nombre
         string destino
-        string foto
+        text foto "nullable"
     }
 
     FAVORITO {
-        int id_favorito PK
-        int id_usuario FK
-        int id_paquete FK
-        int puntaje
-        string comentario
+        int favorito_id PK
+        int user_id FK
+        int paquete_id FK
+        int puntaje "nullable; 0-10"
+        string comentario "nullable; max 255"
     }
 
     COMPRA {
-        int id_compra PK
-        int id_usuario FK
-        int id_paquete FK
-        date fecha_compra
+        int compra_id PK
+        int user_id FK
+        int paquete_id FK
+        int agencia_id FK
+        int hotel_id FK
+        int vuelo_ida_id
+        int vuelo_vuelta_id
+        int venta_vuelo_ida_id
+        int venta_vuelo_vuelta_id
+        string nombre_pasajero
+        timestamp fecha_compra
+        date fecha_ida
+        date fecha_vuelta
         decimal precio_pagado
+        string estado
+        timestamp actualizado_en
+        timestamp cancelada_en "nullable"
     }
 
     AEROLINEA {
-        int id_aerolinea PK
+        int id PK
         string nombre
         string pais
     }
 
     VUELO {
-        int id_vuelo PK
-        int id_aerolinea FK
+        int id PK
+        int aerolinea_id FK
+        string codigo UK
         date fecha
         time hora
         string origen
         string destino
         int capacidad
         int disponibilidad
+    }
+
+    VENTA_VUELO {
+        int id PK
+        int vuelo_id FK
+        string nombre_pasajero
+        timestamp vendido_en
+        boolean reembolsado
+        timestamp reembolsado_en "nullable"
     }
 ```
 ---
