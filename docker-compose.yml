@@ -42,7 +42,7 @@ services:
       DB_NAME: ${POSTGRES_DB:-ctv}
       DB_USER: ${POSTGRES_USER:-ctv_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-ctv_password}
-      FLIGHT_API_URL: http://flights-api:3001
+      FLIGHT_API_URL: ${FLIGHT_API_URL:-http://flights-api:3001}
     depends_on:
       ctv-postgres:
         condition: service_healthy
