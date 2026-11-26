@@ -91,16 +91,16 @@ mediante `db/seed.js`.
 
       Para probar todos los test:
 
-        ```
+```
           npm run test
-        ```
+```
   ### Test e2e
 
-        ```
-          npm run test:e2e
-        ```
+```
+        npm run test:e2e
+```
   ### test cucumber
 
-        ```
+```
           npm run test:cucumber
-        ```
+```

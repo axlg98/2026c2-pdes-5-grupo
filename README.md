@@ -120,14 +120,14 @@ erDiagram
 
 1. Para Windows:
    
-            ```
+```
             docker compose down -v
-            ```
+```
 2. Para Linux:
 
-            ```
+```
             sudo docker compose down -v
-            ```
+```
 
 
 ---
