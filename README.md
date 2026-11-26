@@ -100,14 +100,14 @@ erDiagram
 
 1. Para Windows:
    
-            ```
+```
             docker compose up --build
-            ```
+```
 2. Para Linux:
 
-            ```
+```
             sudo docker compose up --build
-            ```
+```
 
     Esto levanta el backend CTV y sus dependencias configuradas en Docker Compose:
 
