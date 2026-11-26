@@ -21,7 +21,7 @@ export const createFavoritoController = (database = db) => {
 
     const guardarFavorito = async(req,res) => {
         try{
-            const paqueteId = Number(req.body.paquete_id);
+            const paqueteId = Number(req.body?.paquete_id);
             
             if (!Number.isInteger(paqueteId) || paqueteId <= 0){
                 return res.status(400).json({error: "el paquete_id es obligatorio."});
@@ -68,7 +68,7 @@ export const createFavoritoController = (database = db) => {
     const modificarFavoritos = async (req,res) => {
         try{
             const favoritoId = Number(req.params.favorito_id);
-            const {puntaje, comentario} = req.body;
+            const {puntaje, comentario} = req.body ?? {};
 
             if(puntaje === undefined && comentario === undefined){
                 return res.status(400).json({error: 'Envie un puntaje o un comentario.'});
