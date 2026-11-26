@@ -185,7 +185,7 @@ erDiagram
     http://localhost:5173/agencia
 ```
 
-3.admin
+3. admin
 
 ```bash
     http://localhost:5173/admin/agencias
