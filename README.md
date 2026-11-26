@@ -110,7 +110,7 @@ erDiagram
 | `JWT_SECRET` | `replace-this-secret` | Clave compartida para firmar y verificar JWT.|
 | `ADMIN_NAME` | `Admin` | Nombre de la cuenta admin|
 | `ADMIN_EMAIL` | `admin` | Usuario/email de la cuenta admin. |
-| `ADMIN_PASSWORD` | `123456` | Contraseña inicial del administrador; cambiá el valor de ejemplo. |
+| `ADMIN_PASSWORD` | `123456` | Contraseña inicial del administrador. |
 | `FLIGHT_API_URL` | `http://flights-api:3001` | URL interna de Flight API usada por el backend. |
 | `VITE_API_URL` | `http://localhost:3000/api` | URL del backend. |
 | `VITE_FLIGHT_API_URL` | `http://localhost:3001` | URL de Flight API que usa el frontend en el navegador. |
