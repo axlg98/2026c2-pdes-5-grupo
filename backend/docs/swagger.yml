@@ -1,0 +1,2105 @@
+openapi: 3.0.3
+info:
+  title: CTV - API del proyecto
+  description: Especificación de los endpoints del backend de CTV y del servicio de vuelos.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Backend principal
+tags:
+  - name: Salud
+  - name: Autenticación
+  - name: Usuarios
+  - name: Hoteles
+  - name: Paquetes
+  - name: Agencias
+  - name: Compras
+  - name: Favoritos
+  - name: Aerolíneas
+    description: Servicio de vuelos (Flight API). Requiere JWT con rol agencia o admin.
+  - name: Vuelos
+    description: Servicio de vuelos (Flight API). Requiere JWT con rol agencia o admin.
+  - name: Ventas de vuelos
+    description: Servicio de vuelos (Flight API). Requiere JWT con rol agencia o admin.
+paths:
+  /health:
+    servers:
+      - url: http://localhost:3000
+        description: Salud del backend principal
+      - url: http://localhost:3001
+        description: Salud del servicio de vuelos
+    get:
+      tags: [Salud]
+      summary: Comprobar disponibilidad del servicio
+      description: Disponible sin autenticación en ambos servicios.
+      responses:
+        '200':
+          description: Servicio disponible.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+        '500':
+          description: Error de conexión del backend principal.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+        '503':
+          description: Error de conexión de Flight API.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+
+  /auth/register:
+    post:
+      tags: [Autenticación]
+      summary: Registrar un comprador
+      description: El registro público siempre crea un usuario con rol comprador.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre, email, password]
+              properties:
+                nombre:
+                  type: string
+                  example: Ana Pérez
+                email:
+                  type: string
+                  format: email
+                  example: ana@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  format: password
+                  example: clave123
+      responses:
+        '201':
+          description: Usuario registrado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  usuario:
+                    $ref: '#/components/schemas/UsuarioBasico'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '409':
+          description: El email ya está registrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Sesión iniciada. El token vence en ocho horas.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, usuario]
+                properties:
+                  token:
+                    type: string
+                    description: JWT para enviar como Bearer token.
+                  usuario:
+                    $ref: '#/components/schemas/UsuarioBasico'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /auth/me:
+    get:
+      tags: [Autenticación]
+      summary: Consultar mi perfil
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    put:
+      tags: [Autenticación]
+      summary: Actualizar mi perfil
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilInput'
+      responses:
+        '200':
+          description: Perfil actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /auth/users:
+    servers:
+      - url: http://localhost:3000/api
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios registrados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Usuarios]
+      summary: Crear usuario (administrador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre, email, password, rol]
+              properties:
+                nombre:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                  format: password
+                rol:
+                  $ref: '#/components/schemas/Rol'
+      responses:
+        '201':
+          description: Usuario creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  usuario:
+                    $ref: '#/components/schemas/UsuarioBasico'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /auth/users/{usuario_id}:
+    parameters:
+      - $ref: '#/components/parameters/UsuarioId'
+    get:
+      tags: [Usuarios]
+      summary: Consultar usuario (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario consultado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    put:
+      tags: [Usuarios]
+      summary: Modificar usuario (administrador)
+      description: No permite cambiar el propio rol, desactivarse ni modificar otro administrador.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PerfilInput'
+                - type: object
+                  properties:
+                    rol:
+                      $ref: '#/components/schemas/Rol'
+                    activo:
+                      type: boolean
+      responses:
+        '200':
+          description: Usuario modificado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    delete:
+      tags: [Usuarios]
+      summary: Desactivar usuario (administrador)
+      description: Desactiva la cuenta; no elimina físicamente el registro.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario desactivado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /hoteles:
+    get:
+      tags: [Hoteles]
+      summary: Listar hoteles
+      parameters:
+        - name: destino
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtra hoteles por destino exacto.
+      responses:
+        '200':
+          description: Lista de hoteles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hotel'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Hoteles]
+      summary: Crear hotel (administrador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre, destino]
+              properties:
+                nombre:
+                  type: string
+                  example: Hotel del Lago
+                destino:
+                  type: string
+                  example: Bariloche
+                foto:
+                  type: string
+                  nullable: true
+                  example: https://example.com/hotel.jpg
+      responses:
+        '201':
+          description: Hotel creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  hotel:
+                    $ref: '#/components/schemas/Hotel'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /paquetes:
+    get:
+      tags: [Paquetes]
+      summary: Buscar paquetes disponibles
+      parameters:
+        - name: palabraClave
+          in: query
+          schema:
+            type: string
+        - name: destino
+          in: query
+          schema:
+            type: string
+        - name: origen
+          in: query
+          schema:
+            type: string
+        - name: precioMin
+          in: query
+          schema:
+            type: number
+            minimum: 0
+        - name: precioMax
+          in: query
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        '200':
+          description: Paquetes ordenados por precio ascendente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paquetes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaquetePublico'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /compras:
+    get:
+      tags: [Compras]
+      summary: Listar compras propias o todas (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compras visibles para el usuario.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compras:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Compra'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Compras]
+      summary: Comprar un paquete (comprador)
+      description: Registra la compra y vende los dos vuelos asociados al paquete.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paquete_id, nombre_pasajero]
+              properties:
+                paquete_id:
+                  type: integer
+                  minimum: 1
+                  example: 12
+                nombre_pasajero:
+                  type: string
+                  example: Ana Pérez
+      responses:
+        '201':
+          description: Compra registrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  compra:
+                    $ref: '#/components/schemas/Compra'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+        '502':
+          $ref: '#/components/responses/ErrorPasarela'
+
+  /compras/{compra_id}:
+    parameters:
+      - name: compra_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags: [Compras]
+      summary: Consultar una compra propia (o cualquier compra como administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compra consultada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compra:
+                    $ref: '#/components/schemas/Compra'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    put:
+      tags: [Compras]
+      summary: Cambiar nombre del pasajero
+      description: Solo se puede modificar una compra no cancelada.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre_pasajero]
+              properties:
+                nombre_pasajero:
+                  type: string
+                  example: Ana Pérez
+      responses:
+        '200':
+          description: Compra modificada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraModificada'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    delete:
+      tags: [Compras]
+      summary: Cancelar una compra y reembolsar los vuelos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compra cancelada y vuelos reembolsados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraModificada'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+        '502':
+          $ref: '#/components/responses/ErrorPasarela'
+
+  /agencia/usuarios:
+    get:
+      tags: [Agencias]
+      summary: Listar usuarios con rol agencia (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios disponibles para asociar a una agencia.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UsuarioBasico'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/lista:
+    get:
+      tags: [Agencias]
+      summary: Listar agencias (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agencias registradas.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agencias:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agencia'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/mia:
+    get:
+      tags: [Agencias]
+      summary: Consultar mi agencia (agencia)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agencia asociada al usuario.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agencia:
+                    $ref: '#/components/schemas/Agencia'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    put:
+      tags: [Agencias]
+      summary: Modificar mi agencia (agencia)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgenciaInput'
+      responses:
+        '200':
+          description: Agencia modificada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenciaModificada'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/paquetes:
+    get:
+      tags: [Agencias]
+      summary: Listar mis paquetes (agencia)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paquetes de la agencia autenticada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paquetes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Paquete'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Agencias]
+      summary: Crear paquete (agencia)
+      description: Valida hotel, trayectos y disponibilidad de los vuelos.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaqueteInput'
+      responses:
+        '201':
+          description: Paquete creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaqueteModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/paquetes/{paquete_id}:
+    parameters:
+      - name: paquete_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    put:
+      tags: [Agencias]
+      summary: Modificar un paquete propio (agencia)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaqueteInput'
+      responses:
+        '200':
+          description: Paquete actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaqueteModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    delete:
+      tags: [Agencias]
+      summary: Eliminar un paquete propio (agencia)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paquete eliminado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaqueteEliminado'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/compras:
+    get:
+      tags: [Agencias]
+      summary: Consultar ventas de mi agencia (agencia)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compras asociadas a la agencia autenticada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compras:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Compra'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia:
+    post:
+      tags: [Agencias]
+      summary: Crear agencia (administrador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AgenciaInput'
+                - type: object
+                  required: [user_id]
+                  properties:
+                    user_id:
+                      type: integer
+                      minimum: 1
+      responses:
+        '201':
+          description: Agencia creada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenciaModificada'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /agencia/{agencia_id}:
+    parameters:
+      - name: agencia_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags: [Agencias]
+      summary: Consultar agencia (administrador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agencia consultada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agencia:
+                    $ref: '#/components/schemas/Agencia'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    put:
+      tags: [Agencias]
+      summary: Modificar agencia (administrador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AgenciaInput'
+                - type: object
+                  properties:
+                    user_id:
+                      type: integer
+                      minimum: 1
+      responses:
+        '200':
+          description: Agencia modificada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenciaModificada'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    delete:
+      tags: [Agencias]
+      summary: Eliminar agencia (administrador)
+      description: No se puede eliminar una agencia que tenga paquetes asociados.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agencia eliminada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  agencia:
+                    type: object
+                    properties:
+                      agencia_id:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /favoritos/paquetes:
+    get:
+      tags: [Favoritos]
+      summary: Listar paquetes disponibles para guardar
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paquetes disponibles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paquetes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaqueteFavorito'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /favoritos:
+    get:
+      tags: [Favoritos]
+      summary: Obtener mis favoritos (comprador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Favoritos del comprador autenticado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favoritos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FavoritoConPaquete'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Favoritos]
+      summary: Guardar un paquete en favoritos (comprador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paquete_id]
+              properties:
+                paquete_id:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Paquete agregado a favoritos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  favorito:
+                    $ref: '#/components/schemas/FavoritoPersistido'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /favoritos/{favorito_id}:
+    parameters:
+      - name: favorito_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    put:
+      tags: [Favoritos]
+      summary: Actualizar puntaje o comentario (comprador)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              additionalProperties: false
+              properties:
+                puntaje:
+                  type: integer
+                  minimum: 0
+                  maximum: 10
+                comentario:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+      responses:
+        '200':
+          description: Favorito actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoritoModificado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    delete:
+      tags: [Favoritos]
+      summary: Quitar un favorito (comprador)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Favorito eliminado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  favorito:
+                    type: object
+                    properties:
+                      favorito_id:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /aerolineas:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    get:
+      tags: [Aerolíneas]
+      summary: Listar aerolíneas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Aerolíneas ordenadas por nombre.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aerolineas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Aerolinea'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Aerolíneas]
+      summary: Crear aerolínea
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre, pais]
+              properties:
+                nombre:
+                  type: string
+                  example: Aerolíneas del Sur
+                pais:
+                  type: string
+                  example: Argentina
+      responses:
+        '201':
+          description: Aerolínea creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aerolinea:
+                    $ref: '#/components/schemas/Aerolinea'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /vuelos:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    get:
+      tags: [Vuelos]
+      summary: Buscar vuelos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: origen
+          in: query
+          schema:
+            type: string
+        - name: destino
+          in: query
+          schema:
+            type: string
+        - name: fechaDesde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: soloDisponibles
+          in: query
+          schema:
+            type: boolean
+        - name: aerolineaId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Vuelos que coinciden con los filtros.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vuelos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VueloListado'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+    post:
+      tags: [Vuelos]
+      summary: Crear vuelo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VueloInput'
+      responses:
+        '201':
+          description: Vuelo creado; disponibilidad inicial igual a capacidad.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vuelo:
+                    $ref: '#/components/schemas/Vuelo'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /vuelos/{id}:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags: [Vuelos]
+      summary: Consultar un vuelo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Vuelo consultado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vuelo:
+                    $ref: '#/components/schemas/VueloListado'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /vuelos/{id}/venta:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags: [Ventas de vuelos]
+      summary: Registrar la venta de un vuelo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombrePasajero]
+              properties:
+                nombrePasajero:
+                  type: string
+                  example: Ana Pérez
+      responses:
+        '201':
+          description: Venta registrada y disponibilidad decrementada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  venta:
+                    $ref: '#/components/schemas/VentaVuelo'
+                  vuelo:
+                    $ref: '#/components/schemas/Vuelo'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /vuelos/{id}/ventas:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags: [Ventas de vuelos]
+      summary: Alias de registro de venta
+      description: Misma operación que POST /vuelos/{id}/venta.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombrePasajero]
+              properties:
+                nombrePasajero:
+                  type: string
+      responses:
+        '201':
+          description: Venta registrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  venta:
+                    $ref: '#/components/schemas/VentaVuelo'
+                  vuelo:
+                    $ref: '#/components/schemas/Vuelo'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '409':
+          $ref: '#/components/responses/ErrorConflicto'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /vuelos/{id}/reembolso:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags: [Ventas de vuelos]
+      summary: Reembolsar una venta de vuelo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ventaId]
+              properties:
+                ventaId:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Venta reembolsada y disponibilidad restablecida.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  venta:
+                    $ref: '#/components/schemas/VentaVuelo'
+                  vuelo:
+                    $ref: '#/components/schemas/Vuelo'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '404':
+          $ref: '#/components/responses/ErrorNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /ventas:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    get:
+      tags: [Ventas de vuelos]
+      summary: Listar ventas de vuelos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vueloId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Ventas ordenadas por fecha.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ventas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VentaListado'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /inicializacion:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    post:
+      tags: [Vuelos]
+      summary: Inicializar datos de demostración
+      description: Operación idempotente; omite aerolíneas y vuelos ya existentes.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos inicializados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoInicializacion'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+  /initialize:
+    servers:
+      - url: http://localhost:3001/api
+        description: Flight API
+    post:
+      tags: [Vuelos]
+      summary: Alias de inicialización de datos
+      description: Misma operación que POST /inicializacion.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos inicializados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoInicializacion'
+        '401':
+          $ref: '#/components/responses/ErrorNoAutenticado'
+        '403':
+          $ref: '#/components/responses/ErrorSinPermiso'
+        '500':
+          $ref: '#/components/responses/ErrorServidor'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    UsuarioId:
+      name: usuario_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: No autenticado.
+    Rol:
+      type: string
+      enum: [comprador, agencia, admin]
+    UsuarioBasico:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        nombre:
+          type: string
+          example: Ana Pérez
+        email:
+          type: string
+          format: email
+        rol:
+          $ref: '#/components/schemas/Rol'
+    Usuario:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioBasico'
+        - type: object
+          properties:
+            activo:
+              type: boolean
+            actualizado_en:
+              type: string
+              format: date-time
+    PerfilInput:
+      type: object
+      required: [nombre, email]
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+          format: password
+    UsuarioModificado:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+    Hotel:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        destino:
+          type: string
+        foto:
+          type: string
+          nullable: true
+    Paquete:
+      type: object
+      properties:
+        paquete_id:
+          type: integer
+        agencia_id:
+          type: integer
+        hotel_id:
+          type: integer
+        vuelo_ida_id:
+          type: integer
+        vuelo_vuelta_id:
+          type: integer
+        fecha_ida:
+          type: string
+          format: date
+        fecha_vuelta:
+          type: string
+          format: date
+        precio:
+          type: string
+        descripcion:
+          type: string
+        nombre:
+          type: string
+          nullable: true
+        origen:
+          type: string
+        destino:
+          type: string
+    PaquetePublico:
+      allOf:
+        - $ref: '#/components/schemas/Paquete'
+        - type: object
+          properties:
+            hotel:
+              type: string
+            hotelFoto:
+              type: string
+              nullable: true
+            agencia:
+              type: string
+    PaqueteFavorito:
+      type: object
+      properties:
+        paquete_id:
+          type: integer
+        nombre:
+          type: string
+          nullable: true
+        origen:
+          type: string
+        destino:
+          type: string
+        precio:
+          type: string
+    PaqueteInput:
+      type: object
+      required:
+        - nombre
+        - destino
+        - origen
+        - descripcion
+        - precio
+        - hotel_id
+        - vuelo_ida_id
+        - vuelo_vuelta_id
+        - fecha_ida
+        - fecha_vuelta
+      properties:
+        nombre:
+          type: string
+        destino:
+          type: string
+        origen:
+          type: string
+        descripcion:
+          type: string
+        precio:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+        hotel_id:
+          type: integer
+          minimum: 1
+        vuelo_ida_id:
+          type: integer
+          minimum: 1
+        vuelo_vuelta_id:
+          type: integer
+          minimum: 1
+        fecha_ida:
+          type: string
+          format: date
+        fecha_vuelta:
+          type: string
+          format: date
+    PaqueteModificado:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        paquete:
+          $ref: '#/components/schemas/Paquete'
+    PaqueteEliminado:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        paquete:
+          type: object
+          properties:
+            paquete_id:
+              type: integer
+    Agencia:
+      type: object
+      properties:
+        agencia_id:
+          type: integer
+        user_id:
+          type: integer
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        telefono:
+          type: string
+          nullable: true
+    AgenciaInput:
+      type: object
+      required: [nombre, email]
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        telefono:
+          type: string
+          nullable: true
+    AgenciaModificada:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        agencia:
+          $ref: '#/components/schemas/Agencia'
+    Compra:
+      type: object
+      properties:
+        compra_id:
+          type: integer
+        user_id:
+          type: integer
+        paquete_id:
+          type: integer
+        agencia_id:
+          type: integer
+        hotel_id:
+          type: integer
+        vuelo_ida_id:
+          type: integer
+        vuelo_vuelta_id:
+          type: integer
+        venta_vuelo_ida_id:
+          type: integer
+        venta_vuelo_vuelta_id:
+          type: integer
+        nombre_pasajero:
+          type: string
+        fecha_compra:
+          type: string
+          format: date-time
+        fecha_ida:
+          type: string
+          format: date
+        fecha_vuelta:
+          type: string
+          format: date
+        precio_pagado:
+          type: string
+          example: '250000.00'
+        estado:
+          type: string
+          enum: [activa, cancelada]
+        actualizado_en:
+          type: string
+          format: date-time
+        cancelada_en:
+          type: string
+          format: date-time
+          nullable: true
+    CompraModificada:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        compra:
+          $ref: '#/components/schemas/Compra'
+    Favorito:
+      type: object
+      properties:
+        favorito_id:
+          type: integer
+        paquete_id:
+          type: integer
+        puntaje:
+          type: integer
+          minimum: 0
+          maximum: 10
+          nullable: true
+        comentario:
+          type: string
+          maxLength: 255
+          nullable: true
+    FavoritoPersistido:
+      allOf:
+        - $ref: '#/components/schemas/Favorito'
+        - type: object
+          properties:
+            user_id:
+              type: integer
+    FavoritoConPaquete:
+      allOf:
+        - $ref: '#/components/schemas/Favorito'
+        - type: object
+          properties:
+            nombre:
+              type: string
+              nullable: true
+            origen:
+              type: string
+            destino:
+              type: string
+            precio:
+              type: string
+    FavoritoModificado:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        favorito:
+          $ref: '#/components/schemas/FavoritoPersistido'
+    Aerolinea:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        pais:
+          type: string
+    VueloInput:
+      type: object
+      required: [aerolineaId, codigo, fecha, hora, origen, destino, capacidad]
+      properties:
+        aerolineaId:
+          type: integer
+          minimum: 1
+        codigo:
+          type: string
+        fecha:
+          type: string
+          format: date
+        hora:
+          type: string
+          example: '09:30:00'
+        origen:
+          type: string
+        destino:
+          type: string
+        capacidad:
+          type: integer
+          minimum: 1
+    Vuelo:
+      type: object
+      properties:
+        id:
+          type: integer
+        aerolineaId:
+          type: integer
+        codigo:
+          type: string
+        fecha:
+          type: string
+          format: date
+        hora:
+          type: string
+        origen:
+          type: string
+        destino:
+          type: string
+        capacidad:
+          type: integer
+        disponibilidad:
+          type: integer
+    VueloListado:
+      allOf:
+        - $ref: '#/components/schemas/Vuelo'
+        - type: object
+          properties:
+            aerolinea:
+              type: string
+            aerolineaId:
+              type: integer
+    VentaVuelo:
+      type: object
+      properties:
+        id:
+          type: integer
+        vueloId:
+          type: integer
+        nombrePasajero:
+          type: string
+        vendidoEn:
+          type: string
+          format: date-time
+        reembolsado:
+          type: boolean
+        reembolsadoEn:
+          type: string
+          format: date-time
+          nullable: true
+    VentaListado:
+      type: object
+      properties:
+        id:
+          type: integer
+        vueloId:
+          type: integer
+        nombrePasajero:
+          type: string
+        vendidoEn:
+          type: string
+          format: date-time
+        codigo:
+          type: string
+    ResultadoInicializacion:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        aerolineasCreadas:
+          type: integer
+        vuelosCreados:
+          type: integer
+  responses:
+    ErrorSolicitud:
+      description: Datos faltantes o inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ErrorNoAutenticado:
+      description: Token ausente, inválido o vencido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: No autenticado.
+    ErrorSinPermiso:
+      description: El usuario no tiene el rol o permiso requerido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: No tenés permisos para esta acción.
+    ErrorNoEncontrado:
+      description: Recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ErrorConflicto:
+      description: Conflicto con el estado o los datos existentes.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ErrorPasarela:
+      description: Falló una operación con el servicio de vuelos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ErrorServidor:
+      description: Error interno del servidor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

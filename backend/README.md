@@ -64,6 +64,7 @@ identificadores de las ventas externas. Primero vende ambos vuelos y luego
 guarda la compra. Si alguna operación falla, se reembolsa la venta realizada
 para restaurar la disponibilidad.
 
+
 ## Usuarios de demostración
 
 | Rol | Usuario | Contraseña |
@@ -103,4 +104,11 @@ mediante `db/seed.js`.
 
 ```
           npm run test:cucumber
+```
+
+---
+# Swagger
+
+```
+  http://localhost:3000/api-docs/
 ```

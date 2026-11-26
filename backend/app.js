@@ -10,6 +10,9 @@ import createCompraRouter from './routes/compraRoutes.js';
 import {auth} from './middlewares/auth.js'
 import { requireRol } from './middlewares/requireRol.js'
 import { ROLES } from './constants/roles.js';
+import swaggerUI from 'swagger-ui-express';
+import specs from './docs/swagger.js';
+
 
 export const createApp = ({
   database = db,
@@ -19,6 +22,7 @@ export const createApp = ({
   const app = express();
 
   app.use(cors());
+  app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(specs));
   app.use(express.json());
 
   app.get('/health', async (req, res) => {
