@@ -137,6 +137,7 @@ erDiagram
 | `VITE_API_URL` | `http://localhost:3000/api` | URL del backend. |
 | `VITE_FLIGHT_API_URL` | `http://localhost:3001` | URL de Flight API que usa el frontend en el navegador. |
 
+
 ---
 # Usuarios creados por defecto
 
