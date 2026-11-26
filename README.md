@@ -167,16 +167,30 @@ erDiagram
 # URL
  ### REGISTRAR
 ```bash
-    http://localhost:5173/login
+    http://localhost:5173/registro
 ```
  ### LOGIN
 ```bash
     http://localhost:5173/login
 ```
  ### INICIO -> una vez logueado
+1. comprador
+   
 ```bash
-    http://localhost:5173/
+    http://localhost:5173/paquetes
 ```
+2. agencia
+   
+```bash
+    http://localhost:5173/agencia
+```
+
+3.admin
+
+```bash
+    http://localhost:5173/admin/agencias
+```
+
 ---
 
 ### Integrantes
