@@ -97,7 +97,7 @@ erDiagram
 ## Variables de configuración
 
 
-| Variable | Ejemplo | Uso |
+| Variable | Por defecto | Descripción |
 |---|---|---|
 | `POSTGRES_DB` | `ctv` | Base de datos del backend principal. |
 | `POSTGRES_USER` | `ctv_user` | Usuario de la base principal. |
