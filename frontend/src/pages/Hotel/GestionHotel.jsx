@@ -1,5 +1,6 @@
 import { obtenerHotelesService, crearHotelService } from "../../services/hotelService";
 import { useState, useEffect } from "react";
+import './GestionHotel.css';
 
 const GestionHotel = () =>{
     const [hoteles,setHoteles] = useState([]);
@@ -51,43 +52,82 @@ const GestionHotel = () =>{
     }
 
     return(
-        <>
-            <h1>Gestión de Hoteles</h1>
-            <form onSubmit={handleSubmit} className="hotelSubmit">
-                <input 
-                   type="text" 
-                   placeholder="Nombre del hotel"
-                   value={nombre}
-                   onChange={(e) => setNombre(e.target.value)}
-                   required
-                />
-                <input type="text" 
-                   placeholder="Destino"
-                   value={destino}
-                   onChange={(e) => setDestino(e.target.value)}
-                   required
-                />
-                <input type="text" 
-                   placeholder="url de la foto"
-                   value={foto}
-                   onChange={(e) => setFoto(e.target.value)}
-                />
-                <button type="submit">Crear Hotel</button>
+        <main className="hotel-page">
+            <header className="hotel-heading">
+                <p className="eyebrow">Administración</p>
+                <h1>Gestión de hoteles</h1>
+                <p>Administrá los hoteles y destinos disponibles en los paquetes.</p>
+            </header>
+
+            <form onSubmit={handleSubmit} className="hotel-form">
+                <label htmlFor="hotel-nombre">
+                    Nombre del hotel
+                    <input
+                       id="hotel-nombre"
+                       type="text"
+                       placeholder="Ej.: Hotel del Lago"
+                       value={nombre}
+                       onChange={(e) => setNombre(e.target.value)}
+                       required
+                    />
+                </label>
+                <label htmlFor="hotel-destino">
+                    Destino
+                    <input
+                       id="hotel-destino"
+                       type="text"
+                       placeholder="Ej.: Bariloche"
+                       value={destino}
+                       onChange={(e) => setDestino(e.target.value)}
+                       required
+                    />
+                </label>
+                <label htmlFor="hotel-foto">
+                    Foto (opcional)
+                    <input
+                       id="hotel-foto"
+                       type="text"
+                       placeholder="https://..."
+                       value={foto}
+                       onChange={(e) => setFoto(e.target.value)}
+                    />
+                </label>
+                <button className="primary-button" type="submit">Crear hotel</button>
             </form>
 
-            {mensaje && <p role="status">{mensaje}</p>}
-            {error && <p role="alert">{error}</p>}
-            
-            <ul>
-                {
-                    hoteles.map((hotel) => (
-                        <li key={hotel.id}>
-                            <strong>{hotel.nombre}</strong> - {hotel.destino}
-                        </li>
-                    ))
-                }
-            </ul>
-        </>
+            {mensaje && <p className="inline-success hotel-notice" role="status">{mensaje}</p>}
+            {error && <p className="inline-error hotel-notice" role="alert">{error}</p>}
+
+            <section className="hotel-list-section" aria-labelledby="hotel-list-title">
+                <div className="hotel-list-heading">
+                    <h2 id="hotel-list-title">Hoteles registrados</h2>
+                    <span>{hoteles.length} {hoteles.length === 1 ? 'hotel' : 'hoteles'}</span>
+                </div>
+
+                {hoteles.length === 0 ? (
+                    <div className="hotel-empty">
+                        <h3>Todavía no hay hoteles</h3>
+                        <p>Creá el primero con el formulario de arriba.</p>
+                    </div>
+                ) : (
+                    <div className="hotel-grid">
+                        {hoteles.map((hotel) => (
+                            <article className="hotel-card" key={hotel.id}>
+                                {hotel.foto ? (
+                                    <img className="hotel-image" src={hotel.foto} alt={`Hotel ${hotel.nombre}`} loading="lazy" />
+                                ) : (
+                                    <div className="hotel-image-placeholder" aria-hidden="true">Hotel</div>
+                                )}
+                                <div className="hotel-card-body">
+                                    <h3>{hotel.nombre}</h3>
+                                    <p><span aria-hidden="true">⌖</span> {hotel.destino}</p>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
+        </main>
     )
 
 }
