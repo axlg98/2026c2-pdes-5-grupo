@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import './GestionFavoritos.css';
 import {
   obtenerMisFavoritosService,
   obtenerPaquetesService,
@@ -124,61 +125,101 @@ const GestionFavoritos = () => {
   const favoritosPaqueteIds = new Set(favoritos.map((favorito) => favorito.paquete_id));
 
   return (
-    <main>
-      <h1>Mis favoritos</h1>
+    <main className="favorites-page">
+      <header className="favorites-heading">
+        <p className="eyebrow">Tus próximos destinos</p>
+        <div className="favorites-title-row">
+          <div>
+            <h1>Mis favoritos</h1>
+            <p>Guardá los viajes que te gustan y sumales tu propia reseña.</p>
+          </div>
+          {!loading && (
+            <span className="favorites-count">
+              {favoritos.length} {favoritos.length === 1 ? 'paquete' : 'paquetes'}
+            </span>
+          )}
+        </div>
+      </header>
 
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="inline-error favorites-error" role="alert">{error}</p>}
 
-      <label htmlFor="buscar-paquete">Buscar paquete por nombre</label>
+      <section className="favorites-search" aria-labelledby="favorites-search-title">
+        <div className="favorites-search-copy">
+          <h2 id="favorites-search-title">Encontrá otro viaje</h2>
+          <p>Buscá un paquete para agregarlo a tu lista.</p>
+        </div>
+        <label htmlFor="buscar-paquete">Nombre del paquete</label>
         <input
           id="buscar-paquete"
           type="search"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Nombre del paquete"
+          placeholder="Ej.: escapada a Mendoza"
         />
+      </section>
 
       {busqueda.trim() && (
         loadingPaquetes ? (
-          <p>Buscando paquetes...</p>
+          <p className="favorites-status" role="status">Buscando paquetes...</p>
         ) : paquetesFiltrados.length === 0 ? (
-          <p>No se encontraron paquetes con ese nombre.</p>
+          <p className="favorites-status">No se encontraron paquetes con ese nombre.</p>
         ) : (
-          <ul>
+          <section className="favorites-results" aria-label="Resultados de búsqueda">
             {paquetesFiltrados.map((paquete) => {
               const yaEsFavorito = favoritosPaqueteIds.has(paquete.paquete_id);
               return (
-                <li key={paquete.paquete_id}>
-                  <h2>{paquete.nombre}</h2>
-                  <p>{paquete.origen} - {paquete.destino} · ${paquete.precio}</p>
+                <article className="favorite-result-card" key={paquete.paquete_id}>
+                  <div>
+                    <h3>{paquete.nombre}</h3>
+                    <p className="favorite-route">{paquete.origen} <span aria-hidden="true">→</span> {paquete.destino}</p>
+                  </div>
+                  <div className="favorite-result-footer">
+                    <strong>${Number(paquete.precio).toLocaleString('es-AR')}</strong>
                   <button
                     type="button"
+                    className="favorite-button"
                     onClick={() => handleAgregarFavorito(paquete.paquete_id)}
                     disabled={yaEsFavorito}
                   >
                     {yaEsFavorito ? 'Ya está en favoritos' : 'Agregar a favoritos'}
                   </button>
-                </li>
+                  </div>
+                </article>
               );
             })}
-          </ul>
+          </section>
         )
       )}
 
-      {loading ? (
-        <p>Cargando favoritos...</p>
-      ) : favoritos.length === 0 ? (
-        <p>Todavía no tenés favoritos.</p>
-      ) : (
-        <ul>
+      <section className="favorites-list-section" aria-labelledby="favorites-list-title" aria-busy={loading}>
+        <div className="favorites-list-heading">
+          <h2 id="favorites-list-title">Tu lista</h2>
+          {!loading && favoritos.length > 0 && <span>{favoritos.length} guardados</span>}
+        </div>
+
+        {loading ? (
+          <p className="favorites-status" role="status">Cargando tus favoritos...</p>
+        ) : favoritos.length === 0 ? (
+          <div className="favorites-empty">
+            <span className="favorites-empty-icon" aria-hidden="true">♡</span>
+            <h3>Tu lista está esperando su primer viaje</h3>
+            <p>Usá el buscador de arriba para encontrar un paquete y guardarlo acá.</p>
+          </div>
+        ) : (
+          <div className="favorites-grid">
           {favoritos.map((favorito) => (
-            <li key={favorito.favorito_id}>
-              <h2>{favorito.nombre}</h2>
-              <p>
-                {favorito.origen} - {favorito.destino} · ${favorito.precio}
-              </p>
+            <article className="favorite-card" key={favorito.favorito_id}>
+              <div className="favorite-card-heading">
+                <div>
+                  <p className="favorite-card-label">Paquete guardado</p>
+                  <h3>{favorito.nombre}</h3>
+                </div>
+                <span className="favorite-heart" aria-hidden="true">♥</span>
+              </div>
+              <p className="favorite-route">{favorito.origen} <span aria-hidden="true">→</span> {favorito.destino}</p>
+              <p className="favorite-price">${Number(favorito.precio).toLocaleString('es-AR')}</p>
               {favoritoEditando === favorito.favorito_id ? (
-                <form onSubmit={(e) => handleModificarFavorito(e, favorito.favorito_id)}>
+                <form className="favorite-edit-form" onSubmit={(e) => handleModificarFavorito(e, favorito.favorito_id)}>
                   <label>
                     Puntaje (0 a 10)
                     <input
@@ -191,42 +232,58 @@ const GestionFavoritos = () => {
                     />
                   </label>
                   <label>
-                    Comentario
+                    Comentario (opcional)
                     <textarea
+                      rows="3"
                       value={edicion.comentario}
                       onChange={(e) => setEdicion({ ...edicion, comentario: e.target.value })}
                     />
                   </label>
-                  <button type="submit">Guardar cambios</button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFavoritoEditando(null);
-                      setEdicion(EDICION_VACIA);
-                    }}
-                  >
-                    Cancelar
-                  </button>
+                  <div className="favorite-actions">
+                    <button type="submit" className="favorite-button">Guardar cambios</button>
+                    <button
+                      type="button"
+                      className="favorite-button favorite-button-secondary"
+                      onClick={() => {
+                        setFavoritoEditando(null);
+                        setEdicion(EDICION_VACIA);
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </form>
               ) : (
                 <>
-                  {favorito.puntaje != null && <p>Puntaje: {favorito.puntaje}/10</p>}
-                  {favorito.comentario && <p>{favorito.comentario}</p>}
-                  <button type="button" onClick={() => iniciarEdicion(favorito)}>
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuitarFavorito(favorito.favorito_id)}
-                  >
-                    Quitar de favoritos
-                  </button>
+                  <div className="favorite-review">
+                    {favorito.puntaje != null && (
+                      <p className="favorite-rating"><span aria-hidden="true">★</span> {favorito.puntaje}<span>/10</span></p>
+                    )}
+                    {favorito.comentario && <p className="favorite-comment">{favorito.comentario}</p>}
+                    {favorito.puntaje == null && !favorito.comentario && (
+                      <p className="favorite-no-review">Todavía no agregaste una reseña.</p>
+                    )}
+                  </div>
+                  <div className="favorite-actions">
+                    <button type="button" className="favorite-button" onClick={() => iniciarEdicion(favorito)}>
+                      {favorito.puntaje != null || favorito.comentario ? 'Editar reseña' : 'Agregar reseña'}
+                    </button>
+                    <button
+                      type="button"
+                      className="favorite-button favorite-button-remove"
+                      aria-label={`Quitar ${favorito.nombre} de favoritos`}
+                      onClick={() => handleQuitarFavorito(favorito.favorito_id)}
+                    >
+                      Quitar
+                    </button>
+                  </div>
                 </>
               )}
-            </li>
+            </article>
           ))}
-        </ul>
-      )}
+          </div>
+        )}
+      </section>
     </main>
   );
 };
