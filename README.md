@@ -142,6 +142,7 @@ erDiagram
 
 | Usuario | Email | Password |
 |---|---|---|
+| `admin`       |           -               | `123456` |
 | `Comprador`	| `comprador@ctv.com`	    | `comprador123` |
 | `Comprador`	| `lucia@comprador.com`	    | `comprador123` |
 | `Comprador`	| `martin@comprador.com`	| `comprador123` |
